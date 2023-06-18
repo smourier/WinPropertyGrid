@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WinPropertyGrid.SampleApp (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "WinPropertyGrid.SampleApp (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
