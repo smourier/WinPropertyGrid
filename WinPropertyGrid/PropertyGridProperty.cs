@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
 using WinPropertyGrid.Utilities;
 
@@ -21,13 +22,13 @@ namespace WinPropertyGrid
         public PropertyGridObject GridObject { get; }
         public Type Type { get; }
         public string Name { get; }
-        public virtual object? Value { get => DictionaryObjectGetPropertyValue<object>(); set => DictionaryObjectSetPropertyValue(value); }
+        public virtual PropertyDescriptor? Descriptor { get; set; }
+        public ExpandoObject DynamicProperties { get; } = new ExpandoObject();
+
         public virtual object? DefaultValue { get => DictionaryObjectGetPropertyValue<object>(); set => DictionaryObjectSetPropertyValue(value); }
         public virtual int SortOrder { get => DictionaryObjectGetPropertyValue<int>(); set => DictionaryObjectSetPropertyValue(value); }
         public virtual bool IsReadOnly { get => DictionaryObjectGetPropertyValue<bool>(); set => DictionaryObjectSetPropertyValue(value); }
         public bool IsReadWrite { get => !IsReadOnly; set => IsReadOnly = !value; }
-        public virtual bool IsError { get => DictionaryObjectGetPropertyValue<bool>(); set => DictionaryObjectSetPropertyValue(value); }
-        public bool IsNotError { get => !IsError; set => IsError = !value; }
         public virtual bool IsEnum { get => DictionaryObjectGetPropertyValue<bool>(); set => DictionaryObjectSetPropertyValue(value); }
         public bool IsNotEnum { get => !IsEnum; set => IsEnum = !value; }
         public virtual bool IsFlagsEnum { get => DictionaryObjectGetPropertyValue<bool>(); set => DictionaryObjectSetPropertyValue(value); }
@@ -36,13 +37,17 @@ namespace WinPropertyGrid
         public virtual string? DisplayName { get => DictionaryObjectGetPropertyValue<string>(); set => DictionaryObjectSetPropertyValue(value); }
         public virtual string? Description { get => DictionaryObjectGetPropertyValue<string>(); set => DictionaryObjectSetPropertyValue(value); }
         public virtual bool HasDefaultValue { get => DictionaryObjectGetPropertyValue<bool>(); set => DictionaryObjectSetPropertyValue(value); }
+
+        public virtual bool IsNullableType => Type.IsNullable();
         public virtual bool IsDefaultValue => HasDefaultValue && GridObject.CompareForEquality(Value, DefaultValue);
-        public virtual Type? CollectionItemPropertyType => IsCollection ? Conversions.GetElementType(Type) : null;
-        public virtual bool IsCollectionItemValueType => CollectionItemPropertyType?.IsValueType == true;
+        public virtual Type? EnumerableItemPropertyType => IsEnumerable ? Conversions.GetElementType(Type) : null;
         public virtual string ActualDisplayName => DisplayName.Nullify() ?? Name;
+        public virtual string ActualDescription => Description.Nullify() ?? ActualDisplayName;
+
+        public virtual object? Value { get => DictionaryObjectGetPropertyValue<object>(); set => SetValue(value, DictionaryObjectPropertySetOptions.None); }
 
         // note: can eat performance, use with caution
-        public virtual int CollectionCount
+        public virtual int EnumerableCount
         {
             get
             {
@@ -53,7 +58,7 @@ namespace WinPropertyGrid
             }
         }
 
-        public virtual bool IsCollection
+        public virtual bool IsEnumerable
         {
             get
             {
@@ -64,32 +69,12 @@ namespace WinPropertyGrid
             }
         }
 
-        public virtual bool? BooleanValue
-        {
-            get
-            {
-                Conversions.TryChangeType<bool?>(Value, out var text);
-                return text;
-            }
-        }
-
-        public virtual string? TextValue
-        {
-            get
-            {
-                Conversions.TryChangeType<string>(Value, out var text);
-                return text;
-            }
-        }
-
         protected override void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
             {
                 case nameof(Value):
-                    OnPropertyChanged(nameof(TextValue));
-                    OnPropertyChanged(nameof(BooleanValue));
-                    OnPropertyChanged(nameof(CollectionCount));
+                    OnPropertyChanged(nameof(EnumerableCount));
                     OnPropertyChanged(nameof(IsDefaultValue));
                     break;
 
@@ -112,28 +97,32 @@ namespace WinPropertyGrid
                 case nameof(IsFlagsEnum):
                     OnPropertyChanged(nameof(IsNotFlagsEnum));
                     break;
-
-                case nameof(IsError):
-                    OnPropertyChanged(nameof(IsNotError));
-                    break;
             }
+            base.OnPropertyChanged(sender, e);
         }
 
         public virtual bool SetValue(object? value, DictionaryObjectPropertySetOptions options)
         {
-            try
+            if (!Conversions.TryChangeType(value, Type, out var changedValue))
             {
-                return DictionaryObjectSetPropertyValue(value, options, nameof(Value));
+                var type = value != null ? value.GetType().FullName : "null";
+                throw new ArgumentException($"Cannot convert value {value} of type '{type}' to type '{Type.FullName}'.");
             }
-            catch (Exception ex)
+
+            if (Descriptor != null && !Descriptor.IsReadOnly)
             {
-                if (Type == typeof(string))
+                try
                 {
-                    Value = ex.GetAllMessages();
+                    Descriptor.SetValue(GridObject.Data, changedValue);
+                    changedValue = Descriptor.GetValue(GridObject.Data);
                 }
-                IsError = true;
-                return false;
+                catch (Exception e)
+                {
+                    var type = value != null ? value.GetType().FullName : "null";
+                    throw new ArgumentException($"Cannot convert value {value} of type '{type}' to object '{this}'.", e);
+                }
             }
+            return DictionaryObjectSetPropertyValue(changedValue, options, nameof(Value));
         }
 
         public override string ToString() => Name;

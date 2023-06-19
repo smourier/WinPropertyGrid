@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace WinPropertyGrid.Utilities
 {
-    public abstract class DictionaryObject : IDictionaryObject, INotifyPropertyChanged, INotifyPropertyChanging, IDataErrorInfo, INotifyDataErrorInfo
+    public abstract class DictionaryObject : INotifyPropertyChanged, INotifyPropertyChanging, IDataErrorInfo, INotifyDataErrorInfo
     {
         protected DictionaryObject()
         {
@@ -263,8 +263,5 @@ namespace WinPropertyGrid.Utilities
         string IDataErrorInfo.this[string columnName] => DictionaryObjectGetError(columnName)!;
         bool INotifyDataErrorInfo.HasErrors => !IsValid;
         IEnumerable INotifyDataErrorInfo.GetErrors(string? propertyName) => DictionaryObjectGetErrors(propertyName);
-        IDictionary<string, DictionaryObjectProperty?> IDictionaryObject.Properties => DictionaryObjectProperties;
-        void IDictionaryObject.SetPropertyValue(object? value, DictionaryObjectPropertySetOptions options, string? name) => DictionaryObjectSetPropertyValue(value, options, name);
-        T? IDictionaryObject.GetPropertyValue<T>(T? defaultValue, string? name) where T : default => DictionaryObjectGetPropertyValue(defaultValue, name);
     }
 }

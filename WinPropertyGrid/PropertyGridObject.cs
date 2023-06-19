@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
 using WinPropertyGrid.Utilities;
 
@@ -18,27 +19,47 @@ namespace WinPropertyGrid
             Data = data;
             Comparer = grid.Comparer;
             ScanProperties();
+            if (Data is INotifyPropertyChanged pc)
+            {
+                pc.PropertyChanged += OnDataPropertyChanged;
+            }
         }
 
         public PropertyGrid Grid { get; }
         public object Data { get; }
         public ObservableCollection<PropertyGridProperty> Properties { get; } = new();
+        public ExpandoObject DynamicProperties { get; } = new ExpandoObject();
         public virtual IComparer<PropertyGridProperty>? Comparer { get; set; }
 
-        public virtual PropertyGridProperty GetOrAddProperty(string propertyName, Type type, string name)
+        public virtual PropertyGridProperty CreateProperty(Type type, string name) => new(this, type, name);
+
+        private void OnDataPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            ArgumentNullException.ThrowIfNull(propertyName);
-            return Properties.FirstOrDefault(p => p.Name == propertyName) ?? CreateProperty(type, name);
+            if (Grid.DispatcherQueue.HasThreadAccess)
+            {
+                OnSelectedObjectPropertyChanged(sender, e);
+            }
+            else
+            {
+                Grid.DispatcherQueue.TryEnqueue(() => OnSelectedObjectPropertyChanged(sender, e));
+            }
         }
 
-        public virtual DynamicObject CreateDynamicObject() => new();
-        public virtual PropertyGridProperty CreateProperty(Type type, string name) => new(this, type, name);
+        protected virtual void OnSelectedObjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            var property = Properties.FirstOrDefault(p => p.Name == e.PropertyName);
+            if (property == null)
+                return;
+
+            RefreshProperty(property, DictionaryObjectPropertySetOptions.ForceRaiseOnPropertyChanged);
+        }
 
         protected virtual void Describe(PropertyGridProperty property, PropertyDescriptor descriptor)
         {
             ArgumentNullException.ThrowIfNull(property);
             ArgumentNullException.ThrowIfNull(descriptor);
 
+            property.Descriptor = descriptor;
             property.Category = string.IsNullOrWhiteSpace(descriptor.Category) || descriptor.Category.EqualsIgnoreCase(CategoryAttribute.Default.Category) ? Grid.DefaultCategoryName : descriptor.Category;
             property.IsReadOnly = descriptor.IsReadOnly;
             property.Description = descriptor.Description;
@@ -51,31 +72,51 @@ namespace WinPropertyGrid
             property.IsEnum = descriptor.PropertyType.IsEnum;
             property.IsFlagsEnum = descriptor.PropertyType.IsEnum && descriptor.PropertyType.IsFlagsEnum();
 
-            var options = descriptor.Attributes.OfType<PropertyGridPropertyAttribute>().FirstOrDefault();
-            if (options != null)
+            AddDynamicProperties(property.DynamicProperties, descriptor.Attributes);
+
+            var optionsAtt = descriptor.Attributes.OfType<PropertyGridPropertyAttribute>().FirstOrDefault();
+            if (optionsAtt != null)
             {
-                if (options.SortOrder != 0)
+                if (optionsAtt.SortOrder != 0)
                 {
-                    property.SortOrder = options.SortOrder;
+                    property.SortOrder = optionsAtt.SortOrder;
                 }
 
-                property.IsEnum = options.IsEnum;
-                property.IsFlagsEnum = options.IsFlagsEnum;
+                property.IsEnum = optionsAtt.IsEnum;
+                property.IsFlagsEnum = optionsAtt.IsFlagsEnum;
             }
 
-            var att = descriptor.Attributes.OfType<DefaultValueAttribute>().FirstOrDefault();
-            if (att != null)
+            var defaultValueAtt = descriptor.Attributes.OfType<DefaultValueAttribute>().FirstOrDefault();
+            if (defaultValueAtt != null)
             {
                 property.HasDefaultValue = true;
-                property.DefaultValue = att.Value;
+                property.DefaultValue = defaultValueAtt.Value;
             }
-            else if (options != null)
+            else if (optionsAtt != null)
             {
-                if (options.HasDefaultValue)
+                if (optionsAtt.HasDefaultValue)
                 {
                     property.HasDefaultValue = true;
-                    property.DefaultValue = options.DefaultValue;
+                    property.DefaultValue = optionsAtt.DefaultValue;
                 }
+            }
+        }
+
+        private static void AddDynamicProperties(IDictionary<string, object?> dic, AttributeCollection attributes)
+        {
+            dic.Clear();
+            foreach (var dynamicAtt in attributes.OfType<PropertyGridDynamicPropertyAttribute>())
+            {
+                if (string.IsNullOrWhiteSpace(dynamicAtt.Name))
+                    continue;
+
+                var value = dynamicAtt.Value;
+                if (dynamicAtt.Type != null && dynamicAtt.ConvertToType && dynamicAtt.Value != null && !dynamicAtt.Type.IsAssignableFrom(dynamicAtt.Value.GetType()))
+                {
+                    value = Conversions.ChangeType(value, dynamicAtt.Type);
+                }
+
+                dic[dynamicAtt.Name] = value;
             }
         }
 
@@ -88,6 +129,9 @@ namespace WinPropertyGrid
             var options = descriptor.Attributes.OfType<PropertyGridPropertyAttribute>().FirstOrDefault();
             if (options != null)
             {
+                if (options.Ignore)
+                    return null;
+
                 forceReadWrite = options.ForceReadWrite;
                 if (options.Type != null)
                 {
@@ -122,22 +166,26 @@ namespace WinPropertyGrid
                 property.IsReadOnly = false;
             }
 
-            RefreshProperty(property, descriptor, DictionaryObjectPropertySetOptions.TrackChanges);
+            RefreshProperty(property, DictionaryObjectPropertySetOptions.None);
             return property;
         }
 
-        public virtual void RefreshProperty(PropertyGridProperty property, PropertyDescriptor descriptor, DictionaryObjectPropertySetOptions options)
+        public virtual void RefreshProperty(PropertyGridProperty property, DictionaryObjectPropertySetOptions options)
         {
             ArgumentNullException.ThrowIfNull(property);
-            ArgumentNullException.ThrowIfNull(descriptor);
-
-            var value = descriptor.GetValue(Data);
-            property.SetValue(value, options);
+            var descriptor = property.Descriptor;
+            if (descriptor != null)
+            {
+                var value = descriptor.GetValue(Data);
+                property.SetValue(value, options);
+            }
         }
 
         public virtual void ScanProperties()
         {
             Properties.Clear();
+            AddDynamicProperties(DynamicProperties, TypeDescriptor.GetAttributes(Data));
+
             var props = new List<PropertyGridProperty>();
             foreach (var descriptor in TypeDescriptor.GetProperties(Data).Cast<PropertyDescriptor>())
             {

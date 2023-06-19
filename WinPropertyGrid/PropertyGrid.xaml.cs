@@ -6,6 +6,7 @@ using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -37,6 +38,60 @@ namespace WinPropertyGrid
             Comparer = PropertyGridPropertyComparer.Instance;
             NamesList.Loaded += OnNamesListLoaded;
             ValuesList.Loaded += OnValuesListLoaded;
+            NamesList.LayoutUpdated += (s, e) =>
+            {
+                if (SynchronizeNamesListHeights)
+                {
+                    SynchronizeListHeights();
+                }
+            };
+        }
+
+        public CollectionViewSource ViewSource { get; } = new CollectionViewSource();
+        public PropertyGridObject? SelectedGridObject { get; private set; }
+        public virtual bool SynchronizeNamesListHeights { get; set; } = true; // set to false if names & values list heights are always the same (better perf)
+        public virtual string DefaultCategoryName { get; set; }
+        public virtual int MinSplitterWidth { get; set; } = 100;
+        public virtual bool DecamelizePropertiesDisplayNames { get; set; }
+        public virtual IComparer<PropertyGridProperty>? Comparer { get; set; }
+
+        public object? SelectedObject { get => (string)GetValue(SelectedObjectProperty); set => SetValue(SelectedObjectProperty, value); }
+        protected virtual void OnSelectedObjectChanged(DependencyPropertyChangedEventArgs args)
+        {
+            if (args.NewValue == null)
+            {
+                ViewSource.Source = null;
+                return;
+            }
+
+            SelectedGridObject = CreateGridObject(args.NewValue);
+            ViewSource.Source = SelectedGridObject?.Properties;
+            NamesList.ItemsSource = ViewSource.View;
+            ValuesList.ItemsSource = ViewSource.View;
+        }
+
+        // TODO
+        public bool IsGrouped { get => (bool)GetValue(IsGroupedProperty); set => SetValue(IsGroupedProperty, value); }
+        protected virtual void OnIsGroupedChanged(DependencyPropertyChangedEventArgs args)
+        {
+            ViewSource.IsSourceGrouped = (bool)args.NewValue;
+        }
+
+        public virtual PropertyGridObject CreateGridObject(object data) => new(this, data);
+        protected internal virtual bool CompareForEquality(object? o1, object? o2) => Equals(o1, o2);
+
+        protected virtual void SynchronizeListHeights()
+        {
+            var names = NamesList.EnumerateChildren(true).OfType<ListViewItemPresenter>().GetEnumerator();
+            foreach (var value in ValuesList.EnumerateChildren(true).OfType<ListViewItemPresenter>())
+            {
+                names.MoveNext();
+                // poor man's check... could be improved to match names & values but it will take more perf
+                if (value.DataContext == names.Current.DataContext)
+                {
+                    names.Current.Height = value.ActualHeight;
+                }
+            }
         }
 
         private void OnValuesListLoaded(object sender, RoutedEventArgs e)
@@ -107,36 +162,5 @@ namespace WinPropertyGrid
             Splitter.Background = _splitterBrush;
             Splitter.SetCursor(null);
         }
-
-        protected CollectionViewSource ViewSource { get; } = new CollectionViewSource();
-        public PropertyGridObject? SelectedGridObject { get; private set; }
-        public virtual string DefaultCategoryName { get; set; }
-        public virtual int MinSplitterWidth { get; set; } = 100;
-        public virtual bool DecamelizePropertiesDisplayNames { get; set; }
-        public virtual IComparer<PropertyGridProperty>? Comparer { get; set; }
-
-        public object? SelectedObject { get => (string)GetValue(SelectedObjectProperty); set => SetValue(SelectedObjectProperty, value); }
-        protected virtual void OnSelectedObjectChanged(DependencyPropertyChangedEventArgs args)
-        {
-            if (args.NewValue == null)
-            {
-                ViewSource.Source = null;
-                return;
-            }
-
-            SelectedGridObject = CreateGridObject(args.NewValue);
-            ViewSource.Source = SelectedGridObject?.Properties;
-            NamesList.ItemsSource = ViewSource.View;
-            ValuesList.ItemsSource = ViewSource.View;
-        }
-
-        public bool IsGrouped { get => (bool)GetValue(IsGroupedProperty); set => SetValue(IsGroupedProperty, value); }
-        protected virtual void OnIsGroupedChanged(DependencyPropertyChangedEventArgs args)
-        {
-            ViewSource.IsSourceGrouped = (bool)args.NewValue;
-        }
-
-        public virtual PropertyGridObject CreateGridObject(object data) => new(this, data);
-        protected internal virtual bool CompareForEquality(object? o1, object? o2) => Equals(o1, o2);
     }
 }

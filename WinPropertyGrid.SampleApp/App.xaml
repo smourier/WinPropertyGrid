@@ -1,16 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Application
     x:Class="WinPropertyGrid.SampleApp.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:WinPropertyGrid.SampleApp">
+    xmlns:local="using:WinPropertyGrid.SampleApp"
+    xmlns:sys="using:System"
+    xmlns:wpg="using:WinPropertyGrid"
+    xmlns:wpgu="using:WinPropertyGrid.Utilities">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Other merged dictionaries here -->
+                <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+
+            <wpgu:ChangeTypeConverter x:Key="ChangeTypeConverter" />
+
+            <DataTemplate x:Key="PercentEditor">
+                <Slider
+                    IsEnabled="{Binding IsReadWrite}"
+                    Maximum="100"
+                    Minimum="0"
+                    Orientation="Horizontal"
+                    Value="{Binding Value, Mode=TwoWay}" />
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

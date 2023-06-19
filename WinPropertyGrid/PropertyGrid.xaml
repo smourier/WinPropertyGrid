@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinPropertyGrid"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:sys="using:System"
     mc:Ignorable="d">
 
     <SplitView
@@ -14,10 +15,24 @@
         IsPaneOpen="True"
         PaneBackground="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
         <SplitView.Pane>
-            <ListView x:Name="NamesList" HorizontalAlignment="Stretch">
+            <ListView
+                x:Name="NamesList"
+                Padding="0"
+                VerticalContentAlignment="Top">
+                <!--<ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="VerticalContentAlignment" Value="Top" />
+                        <Setter Property="Margin" Value="4" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="MinHeight" Value="0" />
+                    </Style>
+                </ListView.ItemContainerStyle>-->
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock HorizontalAlignment="Left" Text="{Binding ActualDisplayName}" />
+                        <TextBlock
+                            HorizontalAlignment="Left"
+                            Text="{Binding ActualDisplayName}"
+                            ToolTipService.ToolTip="{Binding ActualDescription}" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
@@ -32,11 +47,32 @@
                 Margin="-1"
                 Background="{Binding PaneBackground, ElementName=PropertiesSplit}" />
             <ListView x:Name="ValuesList" Grid.Column="2">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock HorizontalAlignment="Left" Text="{Binding TextValue}" />
-                    </DataTemplate>
-                </ListView.ItemTemplate>
+                <ListView.ItemTemplateSelector>
+                    <local:PropertyGridDataTemplateSelector>
+                        <local:PropertyGridBooleanDataTemplate>
+                            <DataTemplate>
+                                <CheckBox
+                                    IsChecked="{Binding Value, Mode=TwoWay}"
+                                    IsEnabled="{Binding IsReadWrite}"
+                                    IsThreeState="{Binding IsNullableType}" />
+                            </DataTemplate>
+                        </local:PropertyGridBooleanDataTemplate>
+                        <local:PropertyGridDataTemplate TypeNames="System.Guid|System.Nullable`1[System.Guid]">
+                            <DataTemplate x:DataType="local:PropertyGridProperty">
+                                <TextBlock
+                                    FontFamily="Consolas"
+                                    FontSize="80"
+                                    Text="{x:Bind sys:String.Format('{0:N}', Value)}" />
+                            </DataTemplate>
+                        </local:PropertyGridDataTemplate>
+                        <!--  last template is default one  -->
+                        <local:PropertyGridDataTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Value}" />
+                            </DataTemplate>
+                        </local:PropertyGridDataTemplate>
+                    </local:PropertyGridDataTemplateSelector>
+                </ListView.ItemTemplateSelector>
             </ListView>
         </Grid>
     </SplitView>

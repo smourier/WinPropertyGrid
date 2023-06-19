@@ -47,6 +47,28 @@ namespace WinPropertyGrid.Utilities
             return string.Compare(thisString, text, StringComparison.OrdinalIgnoreCase) == 0;
         }
 
+        public static IEnumerable<T> GetAttributes<T>(this MemberInfo element) where T : Attribute => (IEnumerable<T>)Attribute.GetCustomAttributes(element, typeof(T));
+        public static T? GetAttribute<T>(this MemberDescriptor descriptor) where T : Attribute
+        {
+            if (descriptor == null)
+                return null;
+
+            return GetAttribute<T>(descriptor.Attributes);
+        }
+
+        public static T? GetAttribute<T>(this AttributeCollection attributes) where T : Attribute
+        {
+            if (attributes == null)
+                return null;
+
+            foreach (var att in attributes)
+            {
+                if (typeof(T).IsAssignableFrom(att.GetType()))
+                    return (T)att;
+            }
+            return null;
+        }
+
         public static string? GetAllMessages(this Exception exception) => GetAllMessages(exception, Environment.NewLine);
         public static string? GetAllMessages(this Exception exception, string separator)
         {
@@ -715,8 +737,8 @@ namespace WinPropertyGrid.Utilities
             return sb.ToString();
         }
 
-        public static List<T?> SplitToList<T>(this string text, params char[] separators) => SplitToList<T>(text, null, separators);
-        public static List<T?> SplitToList<T>(this string text, IFormatProvider? provider, params char[] separators)
+        public static List<T?> SplitToList<T>(this string? text, params char[] separators) => SplitToList<T>(text, null, separators);
+        public static List<T?> SplitToList<T>(this string? text, IFormatProvider? provider, params char[] separators)
         {
             var al = new List<T?>();
             if (text == null || separators == null || separators.Length == 0)
@@ -1539,7 +1561,7 @@ namespace WinPropertyGrid.Utilities
                 return true;
             }
 
-            // in general, nothing is convertible to anything but one of these, IConvertible is 100% stupid thing
+            // in general, nothing is convertible to anything but one of these, IConvertible is 100% a stupid thing
             bool isWellKnownConvertible()
             {
                 return conversionType == typeof(short) || conversionType == typeof(int) ||

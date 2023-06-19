@@ -11,7 +11,6 @@ namespace WinPropertyGrid.Utilities
         DontTestValuesForEquality = 0x4,
         DontRaiseOnErrorsChanged = 0x8,
         ForceRaiseOnPropertyChanged = 0x10,
-        TrackChanges = 0x20,
-        RollbackChangeOnError = 0x40,
+        RollbackChangeOnError = 0x20,
     }
 }

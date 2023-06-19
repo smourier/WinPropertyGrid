@@ -9,6 +9,16 @@ using WinPropertyGrid.Utilities;
 
 namespace WinPropertyGrid.SampleApp
 {
+    // declare this for example on a class
+    // [PropertyGridDynamicProperty(Name = "NameForeground", Value = "#FF0000")]
+    // and use it like this in PropertyGrid.xaml:
+    // <ListView x:Name="NamesList">
+    //    <ListView.ItemTemplate>
+    //        <DataTemplate>
+    //            <TextBlock Foreground="{Binding GridObject.DynamicProperties.NameForeground}" ... />
+    //        </DataTemplate>
+    //    </ListView.ItemTemplate>
+    //</ListView>
     public class Customer : DictionaryObject
     {
         public Customer()
@@ -24,7 +34,8 @@ namespace WinPropertyGrid.SampleApp
             CreationDateAndTime = DateTime.Now;
             Description = "press button to edit...";
             ByteArray1 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-            WebSite = "http://www.aelyo.com";
+            WebSite = "https://www.aelyo.com";
+            WebSiteUri = new Uri(WebSite);
             Status = Status.Valid;
             Addresses = new ObservableCollection<Address> { new Address { Line1 = "2018 156th Avenue NE", City = "Bellevue", State = "WA", ZipCode = 98007, Country = "USA" } };
             DaysOfWeek = DaysOfWeek.WeekDays;
@@ -37,7 +48,7 @@ namespace WinPropertyGrid.SampleApp
         }
 
         [DisplayName("Guid (see menu on right-click)")]
-        public Guid Id { get => DictionaryObjectGetPropertyValue<Guid>(); set => DictionaryObjectSetPropertyValue(value); }
+        public Guid? Id { get => DictionaryObjectGetPropertyValue<Guid?>(); set => DictionaryObjectSetPropertyValue(value); }
 
         //[ReadOnly(true)]
         [Category("Dates and Times")]
@@ -139,6 +150,9 @@ namespace WinPropertyGrid.SampleApp
         [DisplayName("Web Site (custom sort order)")]
         public string? WebSite { get => DictionaryObjectGetPropertyValue<string>(); set => DictionaryObjectSetPropertyValue(value); }
 
+        [DisplayName("Web Site (Uri)")]
+        public Uri? WebSiteUri { get => DictionaryObjectGetPropertyValue<Uri>(); set => DictionaryObjectSetPropertyValue(value); }
+
         [Category("Collections")]
         [Description("This is the description of ArrayOfStrings")]
         public string[]? ArrayOfStrings { get => DictionaryObjectGetPropertyValue<string[]>(); set => DictionaryObjectSetPropertyValue(value); }
@@ -146,17 +160,30 @@ namespace WinPropertyGrid.SampleApp
         [Category("Collections")]
         public List<string>? ListOfStrings { get => DictionaryObjectGetPropertyValue<List<string>>(); set => DictionaryObjectSetPropertyValue(value); }
 
+        // declare this for example on a property
+        // [PropertyGridDynamicProperty(Name = "NameForeground", Value = "#FF0000")]
+        // and use it like this in PropertyGrid.xaml:
+        // <ListView x:Name="NamesList">
+        //    <ListView.ItemTemplate>
+        //        <DataTemplate>
+        //            <TextBlock Foreground="{Binding DynamicProperties.NameForeground}" ... />
+        //        </DataTemplate>
+        //    </ListView.ItemTemplate>
+        //</ListView>
         [DisplayName("Addresses (custom editor)")]
         [Category("Collections")]
+        [PropertyGridDynamicProperty(Name = "NameForeground", Value = "#FF0000")]
         public ObservableCollection<Address>? Addresses { get => DictionaryObjectGetPropertyValue<ObservableCollection<Address>>(); set => DictionaryObjectSetPropertyValue(value); }
 
         [DisplayName("Days Of Week (multi-valued enum)")]
         [Category("Enums")]
         public DaysOfWeek DaysOfWeek { get => DictionaryObjectGetPropertyValue<DaysOfWeek>(); set => DictionaryObjectSetPropertyValue(value); }
 
+        [PropertyGridProperty(EditorDataTemplateResourceKey = "PercentEditor")]
         [DisplayName("Percentage Of Satisfaction (int)")]
-        public int PercentageOfSatisfactionInt { get => DictionaryObjectGetPropertyValue(0, nameof(PercentageOfSatisfaction)); set => DictionaryObjectSetPropertyValue(value, nameof(PercentageOfSatisfaction)); }
+        public int PercentageOfSatisfactionInt { get => (int)PercentageOfSatisfaction; set => PercentageOfSatisfaction = value; }
 
+        [PropertyGridProperty(EditorDataTemplateResourceKey = "PercentEditor")]
         [DisplayName("Percentage Of Satisfaction (double)")]
         public double PercentageOfSatisfaction
         {
@@ -181,7 +208,22 @@ namespace WinPropertyGrid.SampleApp
 
         [DisplayName("Boolean (Checkbox)")]
         [Category("Booleans")]
-        public bool SampleBoolean { get => DictionaryObjectGetPropertyValue<bool>(); set => DictionaryObjectSetPropertyValue(value); }
+        public bool SampleBoolean
+        {
+            get => DictionaryObjectGetPropertyValue<bool>();
+            set
+            {
+                if (DictionaryObjectSetPropertyValue(value))
+                {
+                    OnPropertyChanged(nameof(SampleReadOnlyBoolean));
+                }
+            }
+        }
+
+        [DisplayName("Boolean ReadOnly (Checkbox)")]
+        [Category("Booleans")]
+        [ReadOnly(true)]
+        public bool SampleReadOnlyBoolean { get => SampleBoolean; set => SampleBoolean = value; }
 
         [DisplayName("Boolean (Checkbox three states)")]
         [Category("Booleans")]
