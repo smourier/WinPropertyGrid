@@ -5,7 +5,7 @@ namespace WinPropertyGrid.SampleApp
 {
     public partial class App : Application
     {
-        private Window _window = null!;
+        private MainWindow _window = null!;
 
         public App()
         {
@@ -15,7 +15,7 @@ namespace WinPropertyGrid.SampleApp
         [MemberNotNull(nameof(_window))]
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            _window = new Window();
+            _window = new MainWindow();
             _window.Activate();
         }
     }

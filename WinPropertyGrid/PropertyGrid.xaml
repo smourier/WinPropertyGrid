@@ -8,12 +8,36 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <ListView x:Name="PGListView">
-        <ListView.ItemsPanel>
-            <ItemsPanelTemplate>
-                <ItemsStackPanel AreStickyGroupHeadersEnabled="False" />
-            </ItemsPanelTemplate>
-        </ListView.ItemsPanel>
-    </ListView>
-
+    <SplitView
+        x:Name="PropertiesSplit"
+        DisplayMode="Inline"
+        IsPaneOpen="True"
+        PaneBackground="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
+        <SplitView.Pane>
+            <ListView x:Name="NamesList" HorizontalAlignment="Stretch">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock HorizontalAlignment="Left" Text="{Binding ActualDisplayName}" />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </SplitView.Pane>
+        <Grid x:Name="ValuesGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border
+                x:Name="Splitter"
+                Margin="-1"
+                Background="{Binding PaneBackground, ElementName=PropertiesSplit}" />
+            <ListView x:Name="ValuesList" Grid.Column="2">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock HorizontalAlignment="Left" Text="{Binding TextValue}" />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+    </SplitView>
 </UserControl>
