@@ -6,7 +6,7 @@ using WinPropertyGrid.Utilities;
 
 namespace WinPropertyGrid
 {
-    public class PropertyGridProperty : DictionaryObject, IComparable, IComparable<PropertyGridProperty>
+    public class PropertyGridProperty : DictionaryObject
     {
         public PropertyGridProperty(PropertyGridObject gridObject, Type type, string name)
         {
@@ -137,19 +137,5 @@ namespace WinPropertyGrid
         }
 
         public override string ToString() => Name;
-
-        int IComparable.CompareTo(object? obj) => CompareTo(obj as PropertyGridProperty);
-        public virtual int CompareTo(PropertyGridProperty? other)
-        {
-            ArgumentNullException.ThrowIfNull(other);
-
-            if (SortOrder != 0)
-                return SortOrder.CompareTo(other.SortOrder);
-
-            if (other.SortOrder != 0)
-                return -other.SortOrder.CompareTo(0);
-
-            return string.Compare(ActualDisplayName, other.ActualDisplayName, StringComparison.OrdinalIgnoreCase);
-        }
     }
 }

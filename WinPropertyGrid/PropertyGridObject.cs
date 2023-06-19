@@ -16,12 +16,14 @@ namespace WinPropertyGrid
             ArgumentNullException.ThrowIfNull(data);
             Grid = grid;
             Data = data;
+            Comparer = grid.Comparer;
             ScanProperties();
         }
 
         public PropertyGrid Grid { get; }
         public object Data { get; }
         public ObservableCollection<PropertyGridProperty> Properties { get; } = new();
+        public virtual IComparer<PropertyGridProperty>? Comparer { get; set; }
 
         public virtual PropertyGridProperty GetOrAddProperty(string propertyName, Type type, string name)
         {
@@ -111,6 +113,8 @@ namespace WinPropertyGrid
             }
 
             property ??= CreateProperty(descriptor.PropertyType, descriptor.Name);
+            if (property == null)
+                return null;
 
             Describe(property, descriptor);
             if (forceReadWrite)
@@ -147,7 +151,11 @@ namespace WinPropertyGrid
                 }
             }
 
-            props.Sort();
+            if (Comparer != null)
+            {
+                props.Sort(Comparer);
+            }
+
             foreach (var property in props)
             {
                 Properties.Add(property);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Microsoft.UI;
@@ -21,6 +22,8 @@ namespace WinPropertyGrid
         private Brush? _splitterBrush;
         private double _openPaneLength;
         private PointerPoint? _splitterPoint;
+        private ScrollViewer? _namesScroll;
+        private ScrollViewer? _valuesScroll;
 
         public PropertyGrid()
         {
@@ -31,6 +34,43 @@ namespace WinPropertyGrid
             Splitter.PointerExited += OnSplitterPointerExited;
             Splitter.PointerPressed += OnSplitterPointerPressed;
             Splitter.PointerReleased += OnSplitterPointerReleased;
+            Comparer = PropertyGridPropertyComparer.Instance;
+            NamesList.Loaded += OnNamesListLoaded;
+            ValuesList.Loaded += OnValuesListLoaded;
+        }
+
+        private void OnValuesListLoaded(object sender, RoutedEventArgs e)
+        {
+            _valuesScroll = ValuesList.EnumerateChildren(true).FirstOrDefault(c => c is ScrollViewer) as ScrollViewer;
+            if (_valuesScroll != null)
+            {
+                _valuesScroll.ViewChanged += ValuesListViewChanged;
+            }
+        }
+
+        private void OnNamesListLoaded(object sender, RoutedEventArgs e)
+        {
+            _namesScroll = NamesList.EnumerateChildren(true).FirstOrDefault(c => c is ScrollViewer) as ScrollViewer;
+            if (_namesScroll != null)
+            {
+                _namesScroll.ViewChanged += NamesListViewChanged;
+            }
+        }
+
+        private void NamesListViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+        {
+            if (_namesScroll != null && _valuesScroll != null)
+            {
+                _valuesScroll.ScrollToVerticalOffset(_namesScroll.VerticalOffset);
+            }
+        }
+
+        private void ValuesListViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+        {
+            if (_namesScroll != null && _valuesScroll != null)
+            {
+                _namesScroll.ScrollToVerticalOffset(_valuesScroll.VerticalOffset);
+            }
         }
 
         private void OnSplitterPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -73,6 +113,7 @@ namespace WinPropertyGrid
         public virtual string DefaultCategoryName { get; set; }
         public virtual int MinSplitterWidth { get; set; } = 100;
         public virtual bool DecamelizePropertiesDisplayNames { get; set; }
+        public virtual IComparer<PropertyGridProperty>? Comparer { get; set; }
 
         public object? SelectedObject { get => (string)GetValue(SelectedObjectProperty); set => SetValue(SelectedObjectProperty, value); }
         protected virtual void OnSelectedObjectChanged(DependencyPropertyChangedEventArgs args)
@@ -83,8 +124,8 @@ namespace WinPropertyGrid
                 return;
             }
 
-            SelectedGridObject = new PropertyGridObject(this, args.NewValue);
-            ViewSource.Source = SelectedGridObject.Properties;
+            SelectedGridObject = CreateGridObject(args.NewValue);
+            ViewSource.Source = SelectedGridObject?.Properties;
             NamesList.ItemsSource = ViewSource.View;
             ValuesList.ItemsSource = ViewSource.View;
         }
@@ -95,6 +136,7 @@ namespace WinPropertyGrid
             ViewSource.IsSourceGrouped = (bool)args.NewValue;
         }
 
+        public virtual PropertyGridObject CreateGridObject(object data) => new(this, data);
         protected internal virtual bool CompareForEquality(object? o1, object? o2) => Equals(o1, o2);
     }
 }
