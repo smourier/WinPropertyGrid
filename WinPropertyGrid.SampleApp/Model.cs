@@ -31,6 +31,7 @@ namespace WinPropertyGrid.SampleApp
                 "string 2"
             };
 
+            TimeOnly = TimeOnly.FromDateTime(DateTime.Now);
             ArrayOfStrings = ListOfStrings.ToArray();
             CreationDateAndTime = DateTime.Now;
             Description = "press button to edit...";
@@ -61,6 +62,8 @@ namespace WinPropertyGrid.SampleApp
         //[ReadOnly(true)]
         [Category("Dates and Times")]
         public DateTime CreationDateAndTime { get => DictionaryObjectGetPropertyValue<DateTime>(); set => DictionaryObjectSetPropertyValue(value); }
+
+        public DateOnly DateOnly { get => DictionaryObjectGetPropertyValue<DateOnly>(); set => DictionaryObjectSetPropertyValue(value); }
 
         [DisplayName("Sub Object (Address)")]
         public Address? SubObject
@@ -139,7 +142,10 @@ namespace WinPropertyGrid.SampleApp
 
         [Category("Dates and Times")]
         [Description("This is the timespan tooltip")]
-        public TimeSpan TimeSpan { get => DictionaryObjectGetPropertyValue<TimeSpan>(); set => DictionaryObjectSetPropertyValue(value); }
+        public TimeSpan TimeSpan { get => DictionaryObjectGetPropertyValue<TimeSpan>(); set { if (DictionaryObjectSetPropertyValue(value)) OnPropertyChanged(nameof(TimeOnly)); } }
+
+        [Category("Dates and Times")]
+        public TimeOnly TimeOnly { get => TimeOnly.FromTimeSpan(TimeSpan); set => TimeSpan = value.ToTimeSpan(); }
 
         [Browsable(false)]
         public string? NotBrowsable { get => DictionaryObjectGetPropertyValue<string>(); set => DictionaryObjectSetPropertyValue(value); }

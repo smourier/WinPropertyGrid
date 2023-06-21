@@ -13,6 +13,6 @@ namespace WinPropertyGrid
         public virtual bool ForceReadWrite { get; set; }
         public virtual bool HasDefaultValue { get; set; }
         public virtual object? DefaultValue { get; set; }
-        public object? EditorDataTemplateResourceKey { get; set; }
+        public virtual object? EditorDataTemplateResourceKey { get; set; }
     }
 }

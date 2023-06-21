@@ -25,6 +25,7 @@ namespace WinPropertyGrid
         private PointerPoint? _splitterPoint;
         private ScrollViewer? _namesScroll;
         private ScrollViewer? _valuesScroll;
+        private ScrollViewer? _errorsScroll;
 
         public PropertyGrid()
         {
@@ -38,6 +39,7 @@ namespace WinPropertyGrid
             Comparer = PropertyGridPropertyComparer.Instance;
             NamesList.Loaded += OnNamesListLoaded;
             ValuesList.Loaded += OnValuesListLoaded;
+            ErrorsList.Loaded += OnErrorListLoaded;
             NamesList.LayoutUpdated += (s, e) =>
             {
                 if (SynchronizeNamesListHeights)
@@ -68,6 +70,7 @@ namespace WinPropertyGrid
             ViewSource.Source = SelectedGridObject?.Properties;
             NamesList.ItemsSource = ViewSource.View;
             ValuesList.ItemsSource = ViewSource.View;
+            ErrorsList.ItemsSource = ViewSource.View;
         }
 
         // TODO
@@ -83,6 +86,7 @@ namespace WinPropertyGrid
         protected virtual void SynchronizeListHeights()
         {
             var names = NamesList.EnumerateChildren(true).OfType<ListViewItemPresenter>().GetEnumerator();
+            var errors = ErrorsList.EnumerateChildren(true).OfType<ListViewItemPresenter>().GetEnumerator();
             foreach (var value in ValuesList.EnumerateChildren(true).OfType<ListViewItemPresenter>())
             {
                 names.MoveNext();
@@ -90,6 +94,15 @@ namespace WinPropertyGrid
                 if (value.DataContext == names.Current.DataContext)
                 {
                     names.Current.Height = value.ActualHeight;
+                }
+            }
+
+            foreach (var value in ErrorsList.EnumerateChildren(true).OfType<ListViewItemPresenter>())
+            {
+                errors.MoveNext();
+                if (value.DataContext == errors.Current.DataContext)
+                {
+                    errors.Current.Height = value.ActualHeight;
                 }
             }
         }
@@ -103,6 +116,11 @@ namespace WinPropertyGrid
             }
         }
 
+        private void OnErrorListLoaded(object sender, RoutedEventArgs e)
+        {
+            _errorsScroll = ErrorsList.EnumerateChildren(true).FirstOrDefault(c => c is ScrollViewer) as ScrollViewer;
+        }
+
         private void OnNamesListLoaded(object sender, RoutedEventArgs e)
         {
             _namesScroll = NamesList.EnumerateChildren(true).FirstOrDefault(c => c is ScrollViewer) as ScrollViewer;
@@ -114,17 +132,19 @@ namespace WinPropertyGrid
 
         private void NamesListViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
         {
-            if (_namesScroll != null && _valuesScroll != null)
+            if (_namesScroll != null)
             {
-                _valuesScroll.ScrollToVerticalOffset(_namesScroll.VerticalOffset);
+                _valuesScroll?.ScrollToVerticalOffset(_namesScroll.VerticalOffset);
+                _errorsScroll?.ScrollToVerticalOffset(_namesScroll.VerticalOffset);
             }
         }
 
         private void ValuesListViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
         {
-            if (_namesScroll != null && _valuesScroll != null)
+            if (_valuesScroll != null)
             {
-                _namesScroll.ScrollToVerticalOffset(_valuesScroll.VerticalOffset);
+                _namesScroll?.ScrollToVerticalOffset(_valuesScroll.VerticalOffset);
+                _errorsScroll?.ScrollToVerticalOffset(_valuesScroll.VerticalOffset);
             }
         }
 

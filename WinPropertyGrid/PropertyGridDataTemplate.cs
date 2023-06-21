@@ -18,6 +18,7 @@ namespace WinPropertyGrid
         }
 
         public virtual DataTemplate? DataTemplate { get; set; }
+        public virtual string? Name { get; set; } // can be compared to property's EditorDataTemplateResourceKey
         public virtual bool? IsReadOnly { get; set; }
         public virtual bool? IsEnum { get; set; }
         public virtual bool? IsFlagsEnum { get; set; }

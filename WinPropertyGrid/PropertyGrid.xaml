@@ -39,6 +39,7 @@
 
     <SplitView
         x:Name="PropertiesSplit"
+        x:FieldModifier="public"
         DisplayMode="Inline"
         IsPaneOpen="True"
         PaneBackground="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
@@ -46,7 +47,8 @@
             <ListView
                 x:Name="NamesList"
                 Padding="0"
-                VerticalContentAlignment="Top">
+                VerticalContentAlignment="Top"
+                x:FieldModifier="public">
                 <!--<ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="VerticalContentAlignment" Value="Top" />
@@ -65,71 +67,169 @@
                 </ListView.ItemTemplate>
             </ListView>
         </SplitView.Pane>
-        <Grid x:Name="ValuesGrid">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Border
-                x:Name="Splitter"
-                Margin="-1"
-                Background="{x:Bind PropertiesSplit.PaneBackground}" />
-            <ListView x:Name="ValuesList" Grid.Column="2">
-                <ListView.ItemTemplateSelector>
-                    <local:PropertyGridDataTemplateSelector>
-                        <local:PropertyGridBooleanDataTemplate>
-                            <DataTemplate x:DataType="local:PropertyGridProperty">
-                                <CheckBox
-                                    IsChecked="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    IsEnabled="{x:Bind IsReadWrite}"
-                                    IsThreeState="{x:Bind IsNullableType}" />
-                            </DataTemplate>
-                        </local:PropertyGridBooleanDataTemplate>
-                        <local:PropertyGridDataTemplate IsReadOnly="False" TypeNames="System.Guid|System.Nullable`1[System.Guid]">
-                            <DataTemplate x:DataType="local:PropertyGridProperty">
-                                <TextBox FontFamily="Consolas" Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <TextBox.ContextFlyout>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem
-                                                Command="{x:Bind CopyCommand()}"
-                                                Icon="Copy"
-                                                Text="{wpgu:Localize Key=CopyToClipboard}" />
-                                            <MenuFlyoutItem
-                                                Command="{x:Bind PasteCommand()}"
-                                                Icon="Paste"
-                                                Text="{wpgu:Localize Key=PasteFromClipboard}" />
-                                            <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem
-                                                Command="{x:Bind NullifyCommand()}"
-                                                Icon="Delete"
-                                                Text="{wpgu:Localize Key=Nullify}"
-                                                Visibility="{x:Bind IsNullableType, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <MenuFlyoutItem
-                                                Click="OnEmptyGuid"
-                                                Icon="Target"
-                                                Text="{wpgu:Localize Key=EmptyGuid}" />
-                                            <MenuFlyoutItem
-                                                Click="OnIncrementGuid"
-                                                Icon="Add"
-                                                Text="{wpgu:Localize Key=IncrementGuid}" />
-                                            <MenuFlyoutItem
-                                                Click="OnNewGuid"
-                                                Icon="Refresh"
-                                                Text="{wpgu:Localize Key=NewGuid}" />
-                                        </MenuFlyout>
-                                    </TextBox.ContextFlyout>
-                                </TextBox>
-                            </DataTemplate>
-                        </local:PropertyGridDataTemplate>
-                        <!--  last template is default one  -->
-                        <local:PropertyGridDataTemplate>
-                            <DataTemplate x:DataType="local:PropertyGridProperty">
-                                <TextBlock IsTextSelectionEnabled="True" Text="{Binding Value}" />
-                            </DataTemplate>
-                        </local:PropertyGridDataTemplate>
-                    </local:PropertyGridDataTemplateSelector>
-                </ListView.ItemTemplateSelector>
+        <Grid>
+            <ListView
+                x:Name="ErrorsList"
+                VerticalContentAlignment="Top"
+                x:FieldModifier="public">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:PropertyGridProperty">
+                        <Border
+                            Height="36"
+                            Margin="4,0,0,0"
+                            Padding="30"
+                            Background="Red"
+                            CornerRadius="5"
+                            Visibility="{Binding HasErrors}">
+                            <TextBlock Foreground="BlueViolet" Text="{Binding ValueErrors}" />
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
             </ListView>
+            <Grid x:Name="ValuesGrid" x:FieldModifier="public">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    x:Name="Splitter"
+                    Margin="-1"
+                    Background="{x:Bind PropertiesSplit.PaneBackground}" />
+                <ListView
+                    x:Name="ValuesList"
+                    Grid.Column="2"
+                    x:FieldModifier="public">
+                    <ListView.ItemTemplateSelector>
+                        <local:PropertyGridDataTemplateSelector>
+                            <!--  order of templates is important, first match => first used  -->
+
+                            <!--  bools  -->
+                            <local:PropertyGridDataTemplate Name="BooleanPropertyGridTemplate" TypeNames="System.Boolean|System.Nullable`1[System.Boolean]">
+                                <DataTemplate x:DataType="local:PropertyGridProperty">
+                                    <CheckBox
+                                        IsChecked="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        IsEnabled="{x:Bind IsReadWrite}"
+                                        IsThreeState="{x:Bind IsNullableType}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  guids  -->
+                            <local:PropertyGridDataTemplate
+                                Name="GuidPropertyGridTemplate"
+                                IsReadOnly="False"
+                                TypeNames="System.Guid|System.Nullable`1[System.Guid]">
+                                <DataTemplate x:DataType="local:PropertyGridProperty">
+                                    <TextBox FontFamily="Consolas" Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <TextBox.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem
+                                                    Command="{x:Bind CopyCommand()}"
+                                                    Icon="Copy"
+                                                    Text="{wpgu:Localize Key=CopyToClipboard}" />
+                                                <MenuFlyoutItem
+                                                    Command="{x:Bind PasteCommand()}"
+                                                    Icon="Paste"
+                                                    Text="{wpgu:Localize Key=PasteFromClipboard}" />
+                                                <MenuFlyoutSeparator />
+                                                <MenuFlyoutItem
+                                                    Command="{x:Bind NullifyCommand()}"
+                                                    Icon="Delete"
+                                                    Text="{wpgu:Localize Key=Nullify}"
+                                                    Visibility="{x:Bind IsNullableType, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                <MenuFlyoutItem
+                                                    Click="OnEmptyGuid"
+                                                    Icon="Target"
+                                                    Text="{wpgu:Localize Key=EmptyGuid}" />
+                                                <MenuFlyoutItem
+                                                    Click="OnIncrementGuid"
+                                                    Icon="Add"
+                                                    Text="{wpgu:Localize Key=IncrementGuid}" />
+                                                <MenuFlyoutItem
+                                                    Click="OnNewGuid"
+                                                    Icon="Refresh"
+                                                    Text="{wpgu:Localize Key=NewGuid}" />
+                                            </MenuFlyout>
+                                        </TextBox.ContextFlyout>
+                                    </TextBox>
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  datetime calendar  -->
+                            <local:PropertyGridDataTemplate
+                                Name="CalendarPropertyGridTemplate"
+                                IsReadOnly="False"
+                                TypeNames="System.DateTime|System.Nullable`1[System.DateTime]">
+                                <DataTemplate>
+                                    <CalendarDatePicker Date="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ToolTip="{Binding FormattedValue}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  datetime date  -->
+                            <local:PropertyGridDataTemplate
+                                Name="DatePropertyGridTemplate"
+                                IsReadOnly="False"
+                                TypeNames="System.DateTime|System.Nullable`1[System.DateTime]">
+                                <DataTemplate>
+                                    <DatePicker Date="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ToolTip="{Binding FormattedValue}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  dateonly  -->
+                            <local:PropertyGridDataTemplate
+                                Name="DateOnlyPropertyGridTemplate"
+                                IsReadOnly="False"
+                                TypeNames="System.DateOnly|System.Nullable`1[System.DateOnly]">
+                                <DataTemplate>
+                                    <DatePicker Date="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ToolTip="{Binding FormattedValue}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  timeonly  -->
+                            <local:PropertyGridDataTemplate
+                                Name="TimeOnlyPropertyGridTemplate"
+                                IsReadOnly="False"
+                                TypeNames="System.TimeOnly|System.Nullable`1[System.TimeOnly]">
+                                <DataTemplate>
+                                    <TimePicker
+                                        ClockIdentifier="24HourClock"
+                                        Time="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ChangeTypeConverter}}"
+                                        ToolTipService.ToolTip="{Binding FormattedValue}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  timespan  -->
+                            <local:PropertyGridDataTemplate
+                                Name="TimeSpanPropertyGridTemplate"
+                                IsReadOnly="False"
+                                TypeNames="System.TimeSpan|System.Nullable`1[System.TimeSpan]">
+                                <DataTemplate>
+                                    <TimePicker Time="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ToolTip="{Binding FormattedValue}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  strings  -->
+                            <local:PropertyGridDataTemplate
+                                Name="StringPropertyGridTemplate"
+                                IsReadOnly="False"
+                                TypeNames="System.String">
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--  last template is default one  -->
+                            <local:PropertyGridDataTemplate Name="DefaultPropertyGridTemplate">
+                                <DataTemplate>
+                                    <TextBlock
+                                        IsTextSelectionEnabled="True"
+                                        Text="{Binding Value}"
+                                        ToolTipService.ToolTip="{Binding FormattedValue}" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+                        </local:PropertyGridDataTemplateSelector>
+                    </ListView.ItemTemplateSelector>
+                </ListView>
+            </Grid>
         </Grid>
     </SplitView>
 </UserControl>

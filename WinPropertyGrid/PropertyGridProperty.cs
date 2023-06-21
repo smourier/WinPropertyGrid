@@ -1,9 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Windows.ApplicationModel.DataTransfer;
@@ -30,6 +33,7 @@ namespace WinPropertyGrid
             _nullifyCommand = new BaseCommand(Nullify);
             _copyCommand = new BaseCommand(CopyToClipboard);
             _pasteCommand = new BaseCommand(PasteFromClipboard);
+            Errors.CollectionChanged += OnErrorsChanged;
         }
 
         public PropertyGridObject GridObject { get; }
@@ -37,6 +41,7 @@ namespace WinPropertyGrid
         public string Name { get; }
         public virtual PropertyDescriptor? Descriptor { get; set; }
         public ExpandoObject DynamicProperties { get; } = new ExpandoObject();
+        public ObservableCollection<PropertyGridPropertyError> Errors { get; } = new ObservableCollection<PropertyGridPropertyError>();
         public ICommand NullifyCommand() => _nullifyCommand;
         public ICommand CopyCommand() => _copyCommand;
         public ICommand PasteCommand() => _pasteCommand;
@@ -72,6 +77,7 @@ namespace WinPropertyGrid
             }
         }
 
+        public string? ValueErrors => GetErrorsText(nameof(Value), Environment.NewLine);
         public virtual object? Value { get => DictionaryObjectGetPropertyValue<object>(); set => SetValue(value, DictionaryObjectPropertySetOptions.None); }
 
         // note: can eat performance, use with caution
@@ -104,6 +110,11 @@ namespace WinPropertyGrid
                 case nameof(Value):
                     OnPropertyChanged(nameof(EnumerableCount));
                     OnPropertyChanged(nameof(IsDefaultValue));
+                    OnPropertyChanged(nameof(FormattedValue));
+                    break;
+
+                case nameof(StringFormat):
+                    OnPropertyChanged(nameof(FormattedValue));
                     break;
 
                 case nameof(DefaultValue):
@@ -129,12 +140,97 @@ namespace WinPropertyGrid
             base.OnPropertyChanged(sender, e);
         }
 
+        public virtual string? GetErrorsText(string? propertyName, string? separator = null) => string.Join(separator, DictionaryObjectGetErrors(propertyName).OfType<PropertyGridPropertyError>().Select(e => e.DisplayName)).Nullify();
+        protected override IEnumerable DictionaryObjectGetErrors(string? propertyName)
+        {
+            if (propertyName == null)
+                return Errors;
+
+            return Errors.Where(e => e.PropertyName == propertyName);
+        }
+
+        private void OnErrorsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            var props = new HashSet<string>();
+            if (e.Action != NotifyCollectionChangedAction.Reset)
+            {
+                if (e.NewItems != null)
+                {
+                    foreach (var name in e.NewItems.OfType<PropertyGridPropertyError>().Where(e => e.PropertyName != null))
+                    {
+                        props.Add(name.PropertyName!);
+                    }
+                }
+
+                if (e.OldItems != null)
+                {
+                    foreach (var name in e.OldItems.OfType<PropertyGridPropertyError>().Where(e => e.PropertyName != null))
+                    {
+                        props.Add(name.PropertyName!);
+                    }
+                }
+            }
+
+            foreach (var prop in props)
+            {
+                OnErrorsChanged(this, new DataErrorsChangedEventArgs(prop));
+            }
+            OnPropertyChanged(nameof(HasErrors));
+            OnPropertyChanged(nameof(HasNoError));
+            OnPropertyChanged(nameof(ValueErrors));
+        }
+
+        protected virtual void SetPropertyError(string text, [CallerMemberName] string? propertyName = null)
+        {
+            if (propertyName != null)
+            {
+                var withProperty = Errors.FirstOrDefault(e => e.PropertyName == propertyName);
+                if (withProperty != null)
+                {
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        Errors.Remove(withProperty);
+                        return;
+                    }
+
+                    withProperty.Text = text;
+                    return;
+                }
+
+                Errors.Add(new PropertyGridPropertyError { Text = text, PropertyName = propertyName });
+                return;
+            }
+
+            if (string.IsNullOrEmpty(text))
+                return;
+
+            // don't add same message twice
+            var existing = Errors.FirstOrDefault(e => e.Text == text && e.PropertyName == null);
+            if (existing != null)
+                return;
+
+            Errors.Add(new PropertyGridPropertyError { Text = text });
+        }
+
+        protected virtual void ClearPropertyError([CallerMemberName] string? propertyName = null)
+        {
+            if (propertyName != null)
+            {
+                var existing = Errors.FirstOrDefault(e => e.PropertyName == propertyName);
+                if (existing != null)
+                {
+                    Errors.Remove(existing);
+                }
+            }
+        }
+
         public virtual bool SetValue(object? value, DictionaryObjectPropertySetOptions options)
         {
             if (!Conversions.TryChangeType(value, Type, out var changedValue))
             {
                 var type = value != null ? value.GetType().FullName : "null";
-                throw new ArgumentException($"Cannot convert value {value} of type '{type}' to type '{Type.FullName}'.");
+                SetPropertyError($"Cannot convert value {value} of type '{type}' to type '{Type.FullName}'.", nameof(Value));
+                return false;
             }
 
             if (Descriptor != null && !Descriptor.IsReadOnly)
@@ -144,12 +240,14 @@ namespace WinPropertyGrid
                     Descriptor.SetValue(GridObject.Data, changedValue);
                     changedValue = Descriptor.GetValue(GridObject.Data);
                 }
-                catch (Exception e)
+                catch
                 {
                     var type = value != null ? value.GetType().FullName : "null";
-                    throw new ArgumentException($"Cannot set value {value} of type '{type}' to property '{Name}' of object '{this}'.", e);
+                    SetPropertyError($"Cannot set value {value} of type '{type}' to property '{Name}' of object '{this}'.", nameof(Value));
+                    return false;
                 }
             }
+            ClearPropertyError(nameof(Value));
             return DictionaryObjectSetPropertyValue(changedValue, options, nameof(Value));
         }
 

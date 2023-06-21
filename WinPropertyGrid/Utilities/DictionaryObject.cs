@@ -29,7 +29,8 @@ namespace WinPropertyGrid.Utilities
         protected virtual bool DictionaryObjectRaiseOnErrorsChanged { get; set; }
 
         protected string? DictionaryObjectError => DictionaryObjectGetError(null);
-        public bool IsValid => !(DictionaryObjectGetErrors(null)?.OfType<object>().Any()).GetValueOrDefault();
+        public bool HasErrors => DictionaryObjectGetErrors(null)?.OfType<object>().Any() == true;
+        public bool HasNoError => !HasErrors;
 
         protected virtual string? DictionaryObjectGetError(string? propertyName)
         {
@@ -43,13 +44,11 @@ namespace WinPropertyGrid.Utilities
 
         protected virtual IEnumerable DictionaryObjectGetErrors(string? propertyName) => Enumerable.Empty<object>();
 
-        protected void OnErrorsChanged(string name)
+        protected void OnErrorsChanged(string? name)
         {
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
-
             OnErrorsChanged(this, new DataErrorsChangedEventArgs(name));
-            OnPropertyChanged(nameof(IsValid));
+            OnPropertyChanged(nameof(HasErrors));
+            OnPropertyChanged(nameof(HasNoError));
         }
 
         protected void OnPropertyChanged([CallerMemberName] string? name = null) => OnPropertyChanged(this, new PropertyChangedEventArgs(name));
@@ -161,8 +160,8 @@ namespace WinPropertyGrid.Utilities
             ArgumentNullException.ThrowIfNull(name);
 
             object[]? oldErrors = null;
-            var rollbackOnError = (options & DictionaryObjectPropertySetOptions.RollbackChangeOnError) == DictionaryObjectPropertySetOptions.RollbackChangeOnError;
-            var onErrorsChanged = (options & DictionaryObjectPropertySetOptions.DontRaiseOnErrorsChanged) != DictionaryObjectPropertySetOptions.DontRaiseOnErrorsChanged;
+            var rollbackOnError = options.HasFlag(DictionaryObjectPropertySetOptions.RollbackChangeOnError);
+            var onErrorsChanged = !options.HasFlag(DictionaryObjectPropertySetOptions.DontRaiseOnErrorsChanged);
             if (!DictionaryObjectRaiseOnErrorsChanged)
             {
                 onErrorsChanged = false;
@@ -173,8 +172,8 @@ namespace WinPropertyGrid.Utilities
                 oldErrors = DictionaryObjectGetErrors(name)?.OfType<object>()?.ToArray();
             }
 
-            var forceChanged = (options & DictionaryObjectPropertySetOptions.ForceRaiseOnPropertyChanged) == DictionaryObjectPropertySetOptions.ForceRaiseOnPropertyChanged;
-            var onChanged = (options & DictionaryObjectPropertySetOptions.DontRaiseOnPropertyChanged) != DictionaryObjectPropertySetOptions.DontRaiseOnPropertyChanged;
+            var forceChanged = options.HasFlag(DictionaryObjectPropertySetOptions.ForceRaiseOnPropertyChanged);
+            var onChanged = !options.HasFlag(DictionaryObjectPropertySetOptions.DontRaiseOnPropertyChanged);
             if (!DictionaryObjectRaiseOnPropertyChanged)
             {
                 onChanged = false;
@@ -221,7 +220,7 @@ namespace WinPropertyGrid.Utilities
                 var rollbacked = false;
                 if (rollbackOnError)
                 {
-                    if ((DictionaryObjectGetErrors(name)?.Cast<object>().Any()).GetValueOrDefault())
+                    if ((DictionaryObjectGetErrors(name)?.Cast<object>().Any()) == true)
                     {
                         var rolled = DictionaryObjectRollbackProperty(options, name, oldProp, newProp) ?? oldProp;
                         if (rolled == null)
@@ -261,7 +260,7 @@ namespace WinPropertyGrid.Utilities
 
         string IDataErrorInfo.Error => DictionaryObjectError!;
         string IDataErrorInfo.this[string columnName] => DictionaryObjectGetError(columnName)!;
-        bool INotifyDataErrorInfo.HasErrors => !IsValid;
+        bool INotifyDataErrorInfo.HasErrors => !HasErrors;
         IEnumerable INotifyDataErrorInfo.GetErrors(string? propertyName) => DictionaryObjectGetErrors(propertyName);
     }
 }

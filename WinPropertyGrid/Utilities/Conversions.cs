@@ -1425,6 +1425,54 @@ namespace WinPropertyGrid.Utilities
                     value = ((DateTimeOffset)input).DateTime;
                     return true;
                 }
+
+                if (inputType == typeof(DateOnly))
+                {
+                    value = ((DateOnly)input).ToDateTime(new TimeOnly(0, 0));
+                    return true;
+                }
+            }
+
+            if (conversionType == typeof(DateOnly))
+            {
+                if (inputType == typeof(int))
+                {
+                    value = DateOnly.FromDayNumber((int)input);
+                    return true;
+                }
+
+                if (inputType == typeof(DateTime))
+                {
+                    value = DateOnly.FromDateTime(((DateTime)input));
+                    return true;
+                }
+
+                if (inputType == typeof(DateTimeOffset))
+                {
+                    value = DateOnly.FromDateTime(((DateTimeOffset)input).DateTime);
+                    return true;
+                }
+            }
+
+            if (conversionType == typeof(TimeOnly))
+            {
+                if (inputType == typeof(TimeSpan))
+                {
+                    value = TimeOnly.FromTimeSpan((TimeSpan)input);
+                    return true;
+                }
+
+                if (inputType == typeof(DateTime))
+                {
+                    value = TimeOnly.FromDateTime(((DateTime)input));
+                    return true;
+                }
+
+                if (inputType == typeof(DateTimeOffset))
+                {
+                    value = TimeOnly.FromDateTime(((DateTimeOffset)input).DateTime);
+                    return true;
+                }
             }
 
             if (conversionType == typeof(DateTimeOffset))
@@ -1440,6 +1488,12 @@ namespace WinPropertyGrid.Utilities
                     value = new DateTimeOffset((DateTime)input);
                     return true;
                 }
+
+                if (inputType == typeof(DateOnly))
+                {
+                    value = new DateTimeOffset(((DateOnly)input).ToDateTime(new TimeOnly(0, 0)));
+                    return true;
+                }
             }
 
             if (conversionType == typeof(TimeSpan))
@@ -1452,13 +1506,19 @@ namespace WinPropertyGrid.Utilities
 
                 if (inputType == typeof(DateTime))
                 {
-                    value = ((DateTime)value!).TimeOfDay;
+                    value = ((DateTime)input).TimeOfDay;
                     return true;
                 }
 
                 if (inputType == typeof(DateTimeOffset))
                 {
-                    value = ((DateTimeOffset)value!).TimeOfDay;
+                    value = ((DateTimeOffset)input).TimeOfDay;
+                    return true;
+                }
+
+                if (inputType == typeof(TimeOnly))
+                {
+                    value = ((TimeOnly)input).ToTimeSpan();
                     return true;
                 }
 

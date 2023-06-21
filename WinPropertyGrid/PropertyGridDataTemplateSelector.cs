@@ -1,5 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
@@ -20,11 +22,15 @@ namespace WinPropertyGrid
                 var att = property.Descriptor?.GetAttribute<PropertyGridPropertyAttribute>();
                 if (att?.EditorDataTemplateResourceKey != null)
                 {
-                    if (Application.Current.Resources.TryGetValue(att.EditorDataTemplateResourceKey, out var value) && value is DataTemplate dt)
+                    var dt = DataTemplates.FirstOrDefault(dt => dt != null && dt.Name?.Equals(att.EditorDataTemplateResourceKey) == true)?.DataTemplate;
+                    if (dt != null)
                         return dt;
 
-                    if (container is FrameworkElement fe && fe.Resources.TryGetValue(att.EditorDataTemplateResourceKey, out value) && value is DataTemplate dt2)
-                        return dt2;
+                    foreach (var dic in EnumerateResourceDictionaries(item, container))
+                    {
+                        if (dic.TryGetValue(att.EditorDataTemplateResourceKey, out var value) && value is DataTemplate dt2)
+                            return dt2;
+                    }
                 }
 
                 foreach (var template in DataTemplates)
@@ -34,6 +40,17 @@ namespace WinPropertyGrid
                 }
             }
             return base.SelectTemplateCore(item, container);
+        }
+
+        protected virtual IEnumerable<ResourceDictionary> EnumerateResourceDictionaries(object item, DependencyObject container)
+        {
+            if (container is FrameworkElement fe)
+                yield return fe.Resources;
+
+            if (item is PropertyGridProperty property)
+                yield return property.GridObject.Grid.Resources;
+
+            yield return Application.Current.Resources;
         }
     }
 }
