@@ -7,7 +7,35 @@
     xmlns:local="using:WinPropertyGrid"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:sys="using:System"
+    xmlns:wpgu="using:WinPropertyGrid.Utilities"
     mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <wpgu:UniversalConverter x:Key="BooleanToVisibilityConverter">
+            <wpgu:UniversalConverter.Switch>
+                <wpgu:UniversalConverterCase ConvertedValue="Visible" Value="true" />
+                <wpgu:UniversalConverterCase ConvertedValue="Collapsed" Value="false" />
+            </wpgu:UniversalConverter.Switch>
+        </wpgu:UniversalConverter>
+        <wpgu:UniversalConverter x:Key="NullToVisibilityConverter">
+            <wpgu:UniversalConverter.Switch>
+                <wpgu:UniversalConverterCase ConvertedValue="Visible" Operator="NotEqual" />
+                <wpgu:UniversalConverterCase ConvertedValue="Collapsed" Operator="Equal" />
+            </wpgu:UniversalConverter.Switch>
+        </wpgu:UniversalConverter>
+        <wpgu:UniversalConverter x:Key="ReverseNullToVisibilityConverter">
+            <wpgu:UniversalConverter.Switch>
+                <wpgu:UniversalConverterCase ConvertedValue="Visible" Operator="Equal" />
+                <wpgu:UniversalConverterCase ConvertedValue="Collapsed" Operator="NotEqual" />
+            </wpgu:UniversalConverter.Switch>
+        </wpgu:UniversalConverter>
+        <wpgu:UniversalConverter x:Key="ReverseBooleanToVisibilityConverter">
+            <wpgu:UniversalConverter.Switch>
+                <wpgu:UniversalConverterCase ConvertedValue="Visible" Value="false" />
+                <wpgu:UniversalConverterCase ConvertedValue="Collapsed" Value="true" />
+            </wpgu:UniversalConverter.Switch>
+        </wpgu:UniversalConverter>
+    </UserControl.Resources>
 
     <SplitView
         x:Name="PropertiesSplit"
@@ -28,11 +56,11 @@
                     </Style>
                 </ListView.ItemContainerStyle>-->
                 <ListView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="local:PropertyGridProperty">
                         <TextBlock
                             HorizontalAlignment="Left"
-                            Text="{Binding ActualDisplayName}"
-                            ToolTipService.ToolTip="{Binding ActualDescription}" />
+                            Text="{x:Bind ActualDisplayName}"
+                            ToolTipService.ToolTip="{x:Bind ActualDescription}" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
@@ -45,30 +73,58 @@
             <Border
                 x:Name="Splitter"
                 Margin="-1"
-                Background="{Binding PaneBackground, ElementName=PropertiesSplit}" />
+                Background="{x:Bind PropertiesSplit.PaneBackground}" />
             <ListView x:Name="ValuesList" Grid.Column="2">
                 <ListView.ItemTemplateSelector>
                     <local:PropertyGridDataTemplateSelector>
                         <local:PropertyGridBooleanDataTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="local:PropertyGridProperty">
                                 <CheckBox
-                                    IsChecked="{Binding Value, Mode=TwoWay}"
-                                    IsEnabled="{Binding IsReadWrite}"
-                                    IsThreeState="{Binding IsNullableType}" />
+                                    IsChecked="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsEnabled="{x:Bind IsReadWrite}"
+                                    IsThreeState="{x:Bind IsNullableType}" />
                             </DataTemplate>
                         </local:PropertyGridBooleanDataTemplate>
-                        <local:PropertyGridDataTemplate TypeNames="System.Guid|System.Nullable`1[System.Guid]">
+                        <local:PropertyGridDataTemplate IsReadOnly="False" TypeNames="System.Guid|System.Nullable`1[System.Guid]">
                             <DataTemplate x:DataType="local:PropertyGridProperty">
-                                <TextBlock
-                                    FontFamily="Consolas"
-                                    FontSize="80"
-                                    Text="{x:Bind sys:String.Format('{0:N}', Value)}" />
+                                <TextBox FontFamily="Consolas" Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem
+                                                Command="{x:Bind CopyCommand()}"
+                                                Icon="Copy"
+                                                Text="{wpgu:Localize Key=CopyToClipboard}" />
+                                            <MenuFlyoutItem
+                                                Command="{x:Bind PasteCommand()}"
+                                                Icon="Paste"
+                                                Text="{wpgu:Localize Key=PasteFromClipboard}" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem
+                                                Command="{x:Bind NullifyCommand()}"
+                                                Icon="Delete"
+                                                Text="{wpgu:Localize Key=Nullify}"
+                                                Visibility="{x:Bind IsNullableType, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <MenuFlyoutItem
+                                                Click="OnEmptyGuid"
+                                                Icon="Target"
+                                                Text="{wpgu:Localize Key=EmptyGuid}" />
+                                            <MenuFlyoutItem
+                                                Click="OnIncrementGuid"
+                                                Icon="Add"
+                                                Text="{wpgu:Localize Key=IncrementGuid}" />
+                                            <MenuFlyoutItem
+                                                Click="OnNewGuid"
+                                                Icon="Refresh"
+                                                Text="{wpgu:Localize Key=NewGuid}" />
+                                        </MenuFlyout>
+                                    </TextBox.ContextFlyout>
+                                </TextBox>
                             </DataTemplate>
                         </local:PropertyGridDataTemplate>
                         <!--  last template is default one  -->
                         <local:PropertyGridDataTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Value}" />
+                            <DataTemplate x:DataType="local:PropertyGridProperty">
+                                <TextBlock IsTextSelectionEnabled="True" Text="{Binding Value}" />
                             </DataTemplate>
                         </local:PropertyGridDataTemplate>
                     </local:PropertyGridDataTemplateSelector>

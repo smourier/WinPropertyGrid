@@ -1,6 +1,5 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Windows.ApplicationModel;
 using Windows.Graphics;
 
 namespace WinPropertyGrid.SampleApp
@@ -10,7 +9,6 @@ namespace WinPropertyGrid.SampleApp
         public MainWindow()
         {
             InitializeComponent();
-            Title = Package.Current.DisplayName;
             var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest);
             var width = 1000;
             var height = 600;

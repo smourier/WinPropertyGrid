@@ -767,8 +767,8 @@ namespace WinPropertyGrid.Utilities
         }
 
         public static T? ChangeType<T>(object? input) => ChangeType(input, default(T));
-        public static T? ChangeType<T>(object? input, T defaultValue) => ChangeType(input, defaultValue, null);
-        public static T? ChangeType<T>(object? input, T defaultValue, IFormatProvider? provider)
+        public static T? ChangeType<T>(object? input, T? defaultValue) => ChangeType(input, defaultValue, null);
+        public static T? ChangeType<T>(object? input, T? defaultValue, IFormatProvider? provider)
         {
             if (!TryChangeType(input, provider, out T? value))
                 return defaultValue;

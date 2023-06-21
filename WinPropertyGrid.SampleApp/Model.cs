@@ -24,6 +24,7 @@ namespace WinPropertyGrid.SampleApp
         public Customer()
         {
             Id = Guid.NewGuid();
+            NullableId = Guid.NewGuid();
             ListOfStrings = new List<string>
             {
                 "string 1",
@@ -48,7 +49,14 @@ namespace WinPropertyGrid.SampleApp
         }
 
         [DisplayName("Guid (see menu on right-click)")]
-        public Guid? Id { get => DictionaryObjectGetPropertyValue<Guid?>(); set => DictionaryObjectSetPropertyValue(value); }
+        public Guid Id { get => DictionaryObjectGetPropertyValue<Guid>(); set => DictionaryObjectSetPropertyValue(value); }
+
+        [DisplayName("Nullable Guid (see menu on right-click)")]
+        public Guid? NullableId { get => DictionaryObjectGetPropertyValue<Guid?>(); set { if (DictionaryObjectSetPropertyValue(value)) OnPropertyChanged(nameof(ReadOnlyNullableId)); } }
+
+        [DisplayName("Nullable Guid (read only)")]
+        [ReadOnly(true)]
+        public Guid? ReadOnlyNullableId { get => NullableId; set => NullableId = value; }
 
         //[ReadOnly(true)]
         [Category("Dates and Times")]

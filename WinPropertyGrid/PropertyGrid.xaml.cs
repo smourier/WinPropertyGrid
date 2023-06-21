@@ -162,5 +162,46 @@ namespace WinPropertyGrid
             Splitter.Background = _splitterBrush;
             Splitter.SetCursor(null);
         }
+
+        private void OnEmptyGuid(object sender, RoutedEventArgs e)
+        {
+            var prop = e.GetFromDatacontext<PropertyGridProperty>();
+            if (prop == null)
+                return;
+
+            if (prop.Type == typeof(Guid) || prop.Type == typeof(Guid?))
+            {
+                prop.Value = Guid.Empty;
+            }
+        }
+
+        private void OnIncrementGuid(object sender, RoutedEventArgs e)
+        {
+            var prop = e.GetFromDatacontext<PropertyGridProperty>();
+            if (prop == null)
+                return;
+
+            if (prop.Type == typeof(Guid) || prop.Type == typeof(Guid?))
+            {
+                if (prop.Value is Guid g)
+                {
+                    var bytes = g.ToByteArray();
+                    bytes[15]++;
+                    prop.Value = new Guid(bytes);
+                }
+            }
+        }
+
+        private void OnNewGuid(object sender, RoutedEventArgs e)
+        {
+            var prop = e.GetFromDatacontext<PropertyGridProperty>();
+            if (prop == null)
+                return;
+
+            if (prop.Type == typeof(Guid) || prop.Type == typeof(Guid?))
+            {
+                prop.Value = Guid.NewGuid();
+            }
+        }
     }
 }

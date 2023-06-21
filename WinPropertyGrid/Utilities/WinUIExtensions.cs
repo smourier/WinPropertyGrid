@@ -20,6 +20,8 @@ namespace WinPropertyGrid.Utilities
             typeof(UIElement).InvokeMember("ProtectedCursor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance, null, element, new object?[] { cursor });
         }
 
+        public static T? GetFromDatacontext<T>(this RoutedEventArgs args) where T : class => (args?.OriginalSource as FrameworkElement)?.DataContext as T;
+
         public static IEnumerable<DependencyObject> EnumerateChildren(this DependencyObject obj, bool recursive = false)
         {
             if (obj == null)
