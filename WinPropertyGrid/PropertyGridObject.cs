@@ -54,6 +54,12 @@ namespace WinPropertyGrid
             RefreshProperty(property, DictionaryObjectPropertySetOptions.ForceRaiseOnPropertyChanged);
         }
 
+        protected internal virtual void OnSelectedObjectPropertyErrorsChanged(PropertyGridProperty property)
+        {
+            ArgumentNullException.ThrowIfNull(property);
+            Grid.OnSelectedObjectPropertyErrorsChanged(this, property);
+        }
+
         protected virtual void Describe(PropertyGridProperty property, PropertyDescriptor descriptor)
         {
             ArgumentNullException.ThrowIfNull(property);

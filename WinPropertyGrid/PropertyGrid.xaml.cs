@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 using Windows.UI.Core;
 using WinPropertyGrid.Utilities;
 
@@ -25,7 +26,6 @@ namespace WinPropertyGrid
         private PointerPoint? _splitterPoint;
         private ScrollViewer? _namesScroll;
         private ScrollViewer? _valuesScroll;
-        private ScrollViewer? _errorsScroll;
 
         public PropertyGrid()
         {
@@ -39,7 +39,6 @@ namespace WinPropertyGrid
             Comparer = PropertyGridPropertyComparer.Instance;
             NamesList.Loaded += OnNamesListLoaded;
             ValuesList.Loaded += OnValuesListLoaded;
-            ErrorsList.Loaded += OnErrorListLoaded;
             NamesList.LayoutUpdated += (s, e) =>
             {
                 if (SynchronizeNamesListHeights)
@@ -70,7 +69,69 @@ namespace WinPropertyGrid
             ViewSource.Source = SelectedGridObject?.Properties;
             NamesList.ItemsSource = ViewSource.View;
             ValuesList.ItemsSource = ViewSource.View;
-            ErrorsList.ItemsSource = ViewSource.View;
+        }
+
+        protected virtual FrameworkElement CreateErrorElement(PropertyGridObject obj, PropertyGridProperty property, ListViewItemPresenter presenter)
+        {
+            ArgumentNullException.ThrowIfNull(obj);
+            ArgumentNullException.ThrowIfNull(property);
+            ArgumentNullException.ThrowIfNull(presenter);
+
+            var element = new InfoBadge
+            {
+                Margin = new Thickness(4, 0, 0, 0),
+                Background = new SolidColorBrush(Colors.Red),
+                Width = 16,
+                Value = property.Errors.Count,
+            };
+            ToolTipService.SetToolTip(element, property.ValueErrors);
+            return element;
+        }
+
+        protected internal virtual void OnSelectedObjectPropertyErrorsChanged(PropertyGridObject obj, PropertyGridProperty property)
+        {
+            ArgumentNullException.ThrowIfNull(obj);
+            ArgumentNullException.ThrowIfNull(property);
+
+            var hasErrors = property.HasErrors;
+
+            // we can have more than one presenter per property
+            foreach (var presenter in ValuesList.EnumerateChildren(true).OfType<ListViewItemPresenter>().Where(p => p.DataContext == property))
+            {
+                var errorElement = CreateErrorElement(obj, property, presenter);
+                if (errorElement == null)
+                    continue;
+
+                var name = typeof(PropertyGrid).FullName;
+                errorElement.Name = name;
+
+                update(null, null);
+                void update(FrameworkElement? sender, EffectiveViewportChangedEventArgs? e)
+                {
+                    var xf = presenter!.TransformToVisual(ValuesList);
+                    var pt = xf.TransformPoint(new Point(presenter.ActualOffset.X, presenter.ActualOffset.Y));
+                    Canvas.SetLeft(errorElement, pt.X);
+                    Canvas.SetTop(errorElement, pt.Y);
+                }
+
+                var existing = ErrorsCanvas.Children.OfType<FrameworkElement>().FirstOrDefault(e => e.Name == name);
+                if (hasErrors)
+                {
+                    if (existing == null)
+                    {
+                        ErrorsCanvas.Children.Add(errorElement);
+                        presenter.EffectiveViewportChanged += update;
+                    }
+                }
+                else
+                {
+                    if (existing != null)
+                    {
+                        presenter.EffectiveViewportChanged -= update;
+                        ErrorsCanvas.Children.Remove(existing);
+                    }
+                }
+            }
         }
 
         // TODO
@@ -86,7 +147,6 @@ namespace WinPropertyGrid
         protected virtual void SynchronizeListHeights()
         {
             var names = NamesList.EnumerateChildren(true).OfType<ListViewItemPresenter>().GetEnumerator();
-            var errors = ErrorsList.EnumerateChildren(true).OfType<ListViewItemPresenter>().GetEnumerator();
             foreach (var value in ValuesList.EnumerateChildren(true).OfType<ListViewItemPresenter>())
             {
                 names.MoveNext();
@@ -94,15 +154,6 @@ namespace WinPropertyGrid
                 if (value.DataContext == names.Current.DataContext)
                 {
                     names.Current.Height = value.ActualHeight;
-                }
-            }
-
-            foreach (var value in ErrorsList.EnumerateChildren(true).OfType<ListViewItemPresenter>())
-            {
-                errors.MoveNext();
-                if (value.DataContext == errors.Current.DataContext)
-                {
-                    errors.Current.Height = value.ActualHeight;
                 }
             }
         }
@@ -114,11 +165,6 @@ namespace WinPropertyGrid
             {
                 _valuesScroll.ViewChanged += ValuesListViewChanged;
             }
-        }
-
-        private void OnErrorListLoaded(object sender, RoutedEventArgs e)
-        {
-            _errorsScroll = ErrorsList.EnumerateChildren(true).FirstOrDefault(c => c is ScrollViewer) as ScrollViewer;
         }
 
         private void OnNamesListLoaded(object sender, RoutedEventArgs e)
@@ -135,7 +181,6 @@ namespace WinPropertyGrid
             if (_namesScroll != null)
             {
                 _valuesScroll?.ScrollToVerticalOffset(_namesScroll.VerticalOffset);
-                _errorsScroll?.ScrollToVerticalOffset(_namesScroll.VerticalOffset);
             }
         }
 
@@ -144,7 +189,6 @@ namespace WinPropertyGrid
             if (_valuesScroll != null)
             {
                 _namesScroll?.ScrollToVerticalOffset(_valuesScroll.VerticalOffset);
-                _errorsScroll?.ScrollToVerticalOffset(_valuesScroll.VerticalOffset);
             }
         }
 

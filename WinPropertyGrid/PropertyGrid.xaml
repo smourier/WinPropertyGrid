@@ -68,24 +68,6 @@
             </ListView>
         </SplitView.Pane>
         <Grid>
-            <ListView
-                x:Name="ErrorsList"
-                VerticalContentAlignment="Top"
-                x:FieldModifier="public">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="local:PropertyGridProperty">
-                        <Border
-                            Height="36"
-                            Margin="4,0,0,0"
-                            Padding="30"
-                            Background="Red"
-                            CornerRadius="5"
-                            Visibility="{Binding HasErrors}">
-                            <TextBlock Foreground="BlueViolet" Text="{Binding ValueErrors}" />
-                        </Border>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
             <Grid x:Name="ValuesGrid" x:FieldModifier="public">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="5" />
@@ -229,6 +211,10 @@
                         </local:PropertyGridDataTemplateSelector>
                     </ListView.ItemTemplateSelector>
                 </ListView>
+                <Canvas
+                    x:Name="ErrorsCanvas"
+                    Grid.Column="2"
+                    x:FieldModifier="public" />
             </Grid>
         </Grid>
     </SplitView>

@@ -174,6 +174,7 @@ namespace WinPropertyGrid
             foreach (var prop in props)
             {
                 OnErrorsChanged(this, new DataErrorsChangedEventArgs(prop));
+                GridObject.OnSelectedObjectPropertyErrorsChanged(this);
             }
             OnPropertyChanged(nameof(HasErrors));
             OnPropertyChanged(nameof(HasNoError));
@@ -247,6 +248,7 @@ namespace WinPropertyGrid
                     return false;
                 }
             }
+
             ClearPropertyError(nameof(Value));
             return DictionaryObjectSetPropertyValue(changedValue, options, nameof(Value));
         }
