@@ -22,11 +22,6 @@
 	    <DesignTime>True</DesignTime>
 	    <AutoGen>True</AutoGen>
 	  </Compile>
-	  <Compile Update="Strings\Resources.fr.Designer.cs">
-	    <DesignTime>True</DesignTime>
-	    <AutoGen>True</AutoGen>
-	    <DependentUpon>Resources.fr.resx</DependentUpon>
-	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>

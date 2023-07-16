@@ -72,6 +72,13 @@ namespace WinPropertyGrid
         {
             get
             {
+                if (IsFlagsEnum)
+                {
+                    var e = Enum;
+                    if (e != null)
+                        return e.ToString();
+                }
+
                 if (StringFormat != null)
                     return string.Format(StringFormat, Value);
 
@@ -243,8 +250,21 @@ namespace WinPropertyGrid
             {
                 try
                 {
-                    Descriptor.SetValue(GridObject.Data, changedValue);
-                    changedValue = Descriptor.GetValue(GridObject.Data);
+                    var set = true;
+                    if (options.HasFlag(DictionaryObjectPropertySetOptions.DontRaiseOnPropertyChanged))
+                    {
+                        var oldValue = Descriptor.GetValue(GridObject.Data);
+                        if (DictionaryObjectAreValuesEqual(oldValue, changedValue))
+                        {
+                            set = false;
+                        }
+                    }
+
+                    if (set)
+                    {
+                        Descriptor.SetValue(GridObject.Data, changedValue);
+                        changedValue = Descriptor.GetValue(GridObject.Data);
+                    }
                 }
                 catch
                 {

@@ -174,7 +174,7 @@ namespace WinPropertyGrid
                 property.IsReadOnly = false;
             }
 
-            RefreshProperty(property, DictionaryObjectPropertySetOptions.None);
+            RefreshProperty(property, DictionaryObjectPropertySetOptions.DontRaiseOnPropertyChanged);
             return property;
         }
 

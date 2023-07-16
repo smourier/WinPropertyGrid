@@ -87,6 +87,40 @@
 
                             <!--  enums  -->
                             <local:PropertyGridDataTemplate
+                                Name="FlyoutFlagsEnumPropertyGridTemplate"
+                                IsFlagsEnum="True"
+                                IsReadOnly="False">
+                                <DataTemplate x:DataType="local:PropertyGridProperty">
+                                    <Button Content="{Binding Enum.Property.FormattedValue}">
+                                        <Button.Flyout>
+                                            <MenuFlyout
+                                                Closing="OnFlyoutFlagsEnumPropertyGridTemplateClosing"
+                                                Opening="OnFlyoutFlagsEnumPropertyGridTemplateOpening"
+                                                Placement="Right" />
+                                        </Button.Flyout>
+                                    </Button>
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
+                            <!--<local:PropertyGridDataTemplate
+                                Name="ComboBoxFlagsEnumPropertyGridTemplate"
+                                IsFlagsEnum="True"
+                                IsReadOnly="False">
+                                <DataTemplate x:DataType="local:PropertyGridProperty">
+                                    <ComboBox Header="{Binding Enum.Property.FormattedValue}" ItemsSource="{x:Bind Enum.Items}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="local:PropertyGridEnumItem">
+                                                <CheckBox
+                                                    Content="{Binding Name}"
+                                                    IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    IsEnabled="{Binding IsEnabled}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>-->
+
+                            <local:PropertyGridDataTemplate
                                 Name="EnumPropertyGridTemplate"
                                 IsEnum="True"
                                 IsReadOnly="False">

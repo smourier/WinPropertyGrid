@@ -61,6 +61,15 @@ namespace WinPropertyGrid.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Close.
+        /// </summary>
+        internal static string Close {
+            get {
+                return ResourceManager.GetString("Close", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Copy to Clipboard.
         /// </summary>
         internal static string CopyToClipboard {

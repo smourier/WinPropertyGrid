@@ -371,10 +371,13 @@ namespace WinPropertyGrid.SampleApp
         }
     }
 
+#pragma warning disable CA1069 // Enums values should not be duplicated
     [Flags]
     public enum DaysOfWeek
     {
         NoDay = 0,
+        [Description("Other No Day")]
+        OtherNoDay = 0,
         Monday = 1,
         Tuesday = 2,
         Wednesday = 4,
@@ -384,6 +387,7 @@ namespace WinPropertyGrid.SampleApp
         Sunday = 64,
         WeekDays = Monday | Tuesday | Wednesday | Thursday | Friday
     }
+#pragma warning restore CA1069 // Enums values should not be duplicated
 
     public enum Animal
     {

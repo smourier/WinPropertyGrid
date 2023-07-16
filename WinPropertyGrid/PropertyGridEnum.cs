@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
@@ -10,8 +11,11 @@ namespace WinPropertyGrid
 {
     public class PropertyGridEnum : INotifyPropertyChanged
     {
-        private readonly IReadOnlyList<PropertyGridEnumItem> _items;
         private PropertyGridEnumItem? _valueItem;
+        private Type? _enumType;
+        private bool _nullable;
+        private bool _flags;
+        private bool _blocked;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -19,12 +23,14 @@ namespace WinPropertyGrid
         {
             ArgumentNullException.ThrowIfNull(property);
             Property = property;
-            _items = GetItems();
-            _valueItem = _items.FirstOrDefault(i => i.IsChecked);
+            BuildItems();
+            _valueItem = Items.FirstOrDefault(i => i.IsChecked);
         }
 
         public PropertyGridProperty Property { get; }
-        public IReadOnlyList<PropertyGridEnumItem> Items => _items;
+        public ObservableCollection<PropertyGridEnumItem> Items { get; } = new ObservableCollection<PropertyGridEnumItem>();
+
+        // only valid for non flags enums
         public virtual PropertyGridEnumItem? ValueItem
         {
             get => _valueItem;
@@ -37,6 +43,30 @@ namespace WinPropertyGrid
                 _valueItem = value;
                 OnPropertyChanged();
             }
+        }
+
+        public override string ToString()
+        {
+            var list = new List<string>();
+            foreach (var item in Items)
+            {
+                if (item._value == 0)
+                {
+                    // zero is on => display only zero
+                    if (item.IsChecked)
+                        return item.Name;
+
+                    // otherwise don't display it
+                    continue;
+                }
+
+                if (item.IsChecked)
+                {
+                    list.Add(item.Name);
+                }
+            }
+
+            return string.Join(", ", list);
         }
 
         protected void OnPropertyChanged([CallerMemberName] string? name = null) => OnPropertyChanged(this, new PropertyChangedEventArgs(name));
@@ -57,46 +87,128 @@ namespace WinPropertyGrid
                 return false;
 
             var da = fi.GetCustomAttribute<DescriptionAttribute>();
-            if (da != null && !string.IsNullOrWhiteSpace(da.Description))
+            if (!string.IsNullOrWhiteSpace(da?.Description))
             {
                 displayName = da.Description;
             }
             return true;
         }
 
-        protected virtual IReadOnlyList<PropertyGridEnumItem> GetItems()
+        private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            var isEnumOrNullableEnum = Property.Type.IsEnumOrNullableEnum(out var enumType, out var nullable);
-            if (!isEnumOrNullableEnum)
-                return Array.Empty<PropertyGridEnumItem>();
+            if (_blocked)
+                return;
 
-            var items = new List<PropertyGridEnumItem>();
+            _blocked = true;
+            var eventItem = (PropertyGridEnumItem)sender!;
+
+            // 0 is special
+            if (eventItem._value == 0)
+            {
+                if (eventItem.IsChecked)
+                {
+                    foreach (var item in Items)
+                    {
+                        item.IsChecked = item._value == 0;
+                        item.IsEnabled = item._value != 0;
+                    }
+
+                    Property.SetValue(0, DictionaryObjectPropertySetOptions.None);
+                    _blocked = false;
+                    return;
+                }
+
+                eventItem.IsChecked = true;
+                _blocked = false;
+                return;
+            }
+
+            var value = 0UL;
+            foreach (var item in Items)
+            {
+                if (item.IsChecked)
+                {
+                    if (item.IsNull)
+                    {
+                        Property.SetValue(null, DictionaryObjectPropertySetOptions.None);
+                        return;
+                    }
+
+                    value |= item._value;
+                }
+            }
+
+            if (!eventItem.IsChecked)
+            {
+                value &= ~eventItem._value;
+            }
+
+            foreach (var item in Items)
+            {
+                item.IsEnabled = item._value != 0 || value != 0;
+                if (item._value == 0)
+                {
+                    item.IsChecked = value == 0;
+                }
+                else
+                {
+                    item.IsChecked = (value & item._value) == item._value;
+                }
+            }
+
+            var enumValue = Conversions.ChangeType(value, _enumType!);
+            Property.SetValue(enumValue, DictionaryObjectPropertySetOptions.None);
+            _blocked = false;
+        }
+
+        protected virtual void BuildItems()
+        {
+            foreach (var item in Items)
+            {
+                item.PropertyChanged -= OnItemPropertyChanged;
+            }
+            Items.Clear();
+
+            var isEnumOrNullableEnum = Property.Type.IsEnumOrNullableEnum(out _enumType, out _nullable);
+            if (!isEnumOrNullableEnum)
+                return;
+
+            _flags = _enumType.IsFlagsEnum();
+
             PropertyGridEnumItem? zeroItem = null;
             PropertyGridEnumItem? nullItem = null;
-            if (nullable)
+            if (_nullable)
             {
                 nullItem = Property.GridObject.Grid.CreateEnumItem(this, Property.GridObject.Grid.NullEnumName, null);
-                items.Add(nullItem);
+                if (nullItem != null)
+                {
+                    nullItem.IsNull = true;
+                    Items.Add(nullItem);
+                }
             }
 
             var uvalue = Conversions.EnumToUInt64(Property.Value);
-            if (!uvalue.HasValue && !nullable) // wrong value in property
+            if (!uvalue.HasValue && !_nullable) // wrong value in property
             {
                 uvalue = 0;
             }
 
-            var names = Enum.GetNames(enumType);
-            var values = Enum.GetValues(enumType);
-            if (enumType.IsFlagsEnum())
+            var names = Enum.GetNames(_enumType);
+            var values = Enum.GetValues(_enumType);
+            if (_flags)
             {
                 for (var i = 0; i < names.Length; i++)
                 {
-                    var nameValue = Conversions.EnumToUInt64(values.GetValue(i)!);
-                    if (!ShowEnumField(enumType, names[i], out var displayName))
+                    var nameValue = Conversions.EnumToUInt64(values.GetValue(i)!)!.Value;
+                    if (!ShowEnumField(_enumType, names[i], out var displayName))
                         continue;
 
                     var item = Property.GridObject.Grid.CreateEnumItem(this, displayName, nameValue);
-                    items.Add(item);
+                    if (item == null)
+                        continue;
+
+                    item._value = nameValue;
+                    Items.Add(item);
 
                     if (nameValue == 0)
                     {
@@ -110,11 +222,14 @@ namespace WinPropertyGrid
             {
                 for (var i = 0; i < names.Length; i++)
                 {
-                    if (!ShowEnumField(enumType, names[i], out var displayName))
+                    if (!ShowEnumField(_enumType, names[i], out var displayName))
                         continue;
 
                     var item = Property.GridObject.Grid.CreateEnumItem(this, displayName, values.GetValue(i));
-                    items.Add(item);
+                    if (item == null)
+                        continue;
+
+                    Items.Add(item);
 
                     var nameValue = Conversions.EnumToUInt64(values.GetValue(i)!);
                     item.IsChecked = uvalue.HasValue && uvalue.Value == nameValue;
@@ -122,10 +237,13 @@ namespace WinPropertyGrid
             }
 
             // we don't want an empty list
-            if (items.Count == 0)
+            if (Items.Count == 0)
             {
                 var item = Property.GridObject.Grid.CreateEnumItem(this, Property.GridObject.Grid.ZeroEnumName, 0);
-                items.Add(item);
+                if (item != null)
+                {
+                    Items.Add(item);
+                }
             }
 
             if (uvalue.HasValue)
@@ -147,7 +265,13 @@ namespace WinPropertyGrid
                 }
             }
 
-            return items.AsReadOnly();
+            if (_flags)
+            {
+                foreach (var item in Items)
+                {
+                    item.PropertyChanged += OnItemPropertyChanged;
+                }
+            }
         }
     }
 }

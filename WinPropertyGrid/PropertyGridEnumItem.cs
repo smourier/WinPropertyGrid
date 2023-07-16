@@ -7,6 +7,8 @@ namespace WinPropertyGrid
     public class PropertyGridEnumItem : INotifyPropertyChanged
     {
         private bool _isChecked;
+        private bool _isEnabled = true;
+        internal ulong _value;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -22,6 +24,10 @@ namespace WinPropertyGrid
         public PropertyGridEnum Enum { get; }
         public object? Value { get; }
         public string Name { get; }
+        public bool IsNull { get; internal set; }
+        public bool IsNotNull => !IsNull;
+
+        public bool IsUnchecked { get => !IsChecked; set => IsChecked = !value; }
         public virtual bool IsChecked
         {
             get => _isChecked;
@@ -31,6 +37,21 @@ namespace WinPropertyGrid
                     return;
 
                 _isChecked = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsDisabled { get => !IsEnabled; set => IsEnabled = !value; }
+        public virtual bool IsEnabled
+        {
+            get => _isEnabled;
+            set
+            {
+                if (_isEnabled == value)
+                    return;
+
+                _isEnabled = value;
+                OnPropertyChanged();
             }
         }
 

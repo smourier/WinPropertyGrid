@@ -23,6 +23,7 @@ namespace WinPropertyGrid
 
         private Brush? _splitterBrush;
         private double _openPaneLength;
+        private bool _flyoutFlagsEnumPropertyGridTemplateCloseOk;
         private PointerPoint? _splitterPoint;
         private ScrollViewer? _namesScroll;
         private ScrollViewer? _valuesScroll;
@@ -272,6 +273,53 @@ namespace WinPropertyGrid
             {
                 prop.Value = Guid.NewGuid();
             }
+        }
+
+        private void OnFlyoutFlagsEnumPropertyGridTemplateOpening(object sender, object e)
+        {
+            _flyoutFlagsEnumPropertyGridTemplateCloseOk = false;
+            var menu = (MenuFlyout)sender;
+            if (menu.Target.DataContext is not PropertyGridProperty property)
+                return;
+
+            menu.Items.Clear();
+            var items = property.Enum?.Items;
+            if (items == null)
+                return;
+
+            foreach (var item in items)
+            {
+                var menuItem = new ToggleMenuFlyoutItem { Text = item.Name, IsChecked = item.IsChecked };
+                menuItem.Click += (s, e) =>
+                {
+                    item.IsChecked = !item.IsChecked;
+                    // refresh all items
+                    foreach (var child in menu.Items.OfType<ToggleMenuFlyoutItem>())
+                    {
+                        var childItem = child.CommandParameter as PropertyGridEnumItem;
+                        if (childItem != null)
+                        {
+                            child.IsChecked = childItem.IsChecked;
+                        }
+                    }
+                };
+                menuItem.CommandParameter = item;
+                menu.Items.Add(menuItem);
+            }
+
+            menu.Items.Add(new MenuFlyoutSeparator());
+            var close = new MenuFlyoutItem { Text = "\uE10B", FontFamily = new FontFamily("Segoe MDL2 Assets") }; // accept symbol
+            close.Click += (s, e) =>
+            {
+                _flyoutFlagsEnumPropertyGridTemplateCloseOk = true;
+                menu.Hide();
+            };
+            menu.Items.Add(close);
+        }
+
+        private void OnFlyoutFlagsEnumPropertyGridTemplateClosing(FlyoutBase sender, FlyoutBaseClosingEventArgs args)
+        {
+            args.Cancel = !_flyoutFlagsEnumPropertyGridTemplateCloseOk;
         }
     }
 }

@@ -12,6 +12,12 @@ namespace WinPropertyGrid.SampleApp
 
         public App()
         {
+#if DEBUG
+            DebugSettings.IsXamlResourceReferenceTracingEnabled = true;
+            DebugSettings.IsBindingTracingEnabled = true;
+            DebugSettings.IsBindingTracingEnabled = true;
+#endif
+
             Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = null;// "fr-FR";
             InitializeComponent();
         }
@@ -19,8 +25,10 @@ namespace WinPropertyGrid.SampleApp
         [MemberNotNull(nameof(_window))]
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            _window = new MainWindow();
-            _window.Title = ResourceLoader.GetString("AppName");
+            _window = new MainWindow
+            {
+                Title = ResourceLoader.GetString("AppName")
+            };
             _window.Activate();
         }
     }
