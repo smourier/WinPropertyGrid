@@ -31,8 +31,6 @@ namespace WinPropertyGrid
         public ExpandoObject DynamicProperties { get; } = new ExpandoObject();
         public virtual IComparer<PropertyGridProperty>? Comparer { get; set; }
 
-        public virtual PropertyGridProperty CreateProperty(Type type, string name) => new(this, type, name);
-
         private void OnDataPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (Grid.DispatcherQueue.HasThreadAccess)
@@ -75,8 +73,15 @@ namespace WinPropertyGrid
                 property.DisplayName = Conversions.Decamelize(property.DisplayName);
             }
 
-            property.IsEnum = descriptor.PropertyType.IsEnum;
-            property.IsFlagsEnum = descriptor.PropertyType.IsEnum && descriptor.PropertyType.IsFlagsEnum();
+            property.IsEnum = descriptor.PropertyType.IsEnumOrNullableEnum(out var enumType, out var nullable);
+            if (property.IsEnum && nullable)
+            {
+                property.IsFlagsEnum = enumType.IsFlagsEnum();
+            }
+            else
+            {
+                property.IsFlagsEnum = descriptor.PropertyType.IsEnum && descriptor.PropertyType.IsFlagsEnum();
+            }
 
             AddDynamicProperties(property.DynamicProperties, descriptor.Attributes);
 
@@ -87,9 +92,6 @@ namespace WinPropertyGrid
                 {
                     property.SortOrder = optionsAtt.SortOrder;
                 }
-
-                property.IsEnum = optionsAtt.IsEnum;
-                property.IsFlagsEnum = optionsAtt.IsFlagsEnum;
             }
 
             var defaultValueAtt = descriptor.Attributes.OfType<DefaultValueAttribute>().FirstOrDefault();
@@ -162,7 +164,7 @@ namespace WinPropertyGrid
                 }
             }
 
-            property ??= CreateProperty(descriptor.PropertyType, descriptor.Name);
+            property ??= Grid.CreateProperty(this, descriptor.PropertyType, descriptor.Name);
             if (property == null)
                 return null;
 

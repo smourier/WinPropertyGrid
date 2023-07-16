@@ -85,6 +85,20 @@
                         <local:PropertyGridDataTemplateSelector>
                             <!--  order of templates is important, first match => first used  -->
 
+                            <!--  enums  -->
+                            <local:PropertyGridDataTemplate
+                                Name="EnumPropertyGridTemplate"
+                                IsEnum="True"
+                                IsReadOnly="False">
+                                <DataTemplate x:DataType="local:PropertyGridProperty">
+                                    <ComboBox
+                                        DisplayMemberPath="Name"
+                                        ItemsSource="{x:Bind Enum.Items}"
+                                        SelectedItem="{x:Bind Enum.ValueItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        SelectedValuePath="Value" />
+                                </DataTemplate>
+                            </local:PropertyGridDataTemplate>
+
                             <!--  bools  -->
                             <local:PropertyGridDataTemplate Name="BooleanPropertyGridTemplate" TypeNames="System.Boolean|System.Nullable`1[System.Boolean]">
                                 <DataTemplate x:DataType="local:PropertyGridProperty">
@@ -204,7 +218,7 @@
                                 <DataTemplate>
                                     <TextBlock
                                         IsTextSelectionEnabled="True"
-                                        Text="{Binding Value}"
+                                        Text="{Binding FormattedValue}"
                                         ToolTipService.ToolTip="{Binding FormattedValue}" />
                                 </DataTemplate>
                             </local:PropertyGridDataTemplate>

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -121,6 +122,31 @@ namespace WinPropertyGrid.Utilities
                 i++;
             }
             return -1;
+        }
+
+        public static bool IsEnumOrNullableEnum(this Type type, [NotNullWhen(true)] out Type enumType, out bool nullable) // enumType not marked as nullable as NotNullWhen doesn't seem to be effective
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            nullable = false;
+            if (type.IsEnum)
+            {
+                enumType = type;
+                return true;
+            }
+
+            if (type.Name == typeof(Nullable<>).Name)
+            {
+                var args = type.GetGenericArguments();
+                if (args.Length == 1 && args[0].IsEnum)
+                {
+                    enumType = args[0];
+                    nullable = true;
+                    return true;
+                }
+            }
+
+            enumType = null!; // see remarke above
+            return false;
         }
 
         public static bool IsFlagsEnum(this Type enumType)
@@ -1664,7 +1690,7 @@ namespace WinPropertyGrid.Utilities
                         // continue;
                     }
                 }
-                else if (typeConverter.CanConvertTo(conversionType))
+                else if (conversionType != typeof(string) && typeConverter.CanConvertTo(conversionType)) // don't convert to string here
                 {
                     try
                     {
@@ -1680,6 +1706,21 @@ namespace WinPropertyGrid.Utilities
 
             if (conversionType == typeof(string))
             {
+                if (input is byte[] bytes)
+                {
+                    const int max = 256;
+                    if (bytes.Length > max)
+                    {
+                        const string hyphens = "...";
+                        value = bytes.ToHexa(max - hyphens.Length) + hyphens;
+                    }
+                    else
+                    {
+                        value = bytes.ToHexa();
+                    }
+                    return true;
+                }
+
                 value = string.Format(provider, "{0}", input);
                 return true;
             }
@@ -1687,15 +1728,17 @@ namespace WinPropertyGrid.Utilities
             return false;
         }
 
-        public static ulong EnumToUInt64(string text, Type enumType)
+        public static ulong? EnumToUInt64(string text, Type enumType)
         {
             ArgumentNullException.ThrowIfNull(enumType);
-            return EnumToUInt64(ChangeType(text, enumType)!);
+            return EnumToUInt64(ChangeType(text, enumType));
         }
 
-        public static ulong EnumToUInt64(object value)
+        public static ulong? EnumToUInt64(object? value)
         {
-            ArgumentNullException.ThrowIfNull(value);
+            if (value == null)
+                return null;
+
             var typeCode = Convert.GetTypeCode(value);
             switch (typeCode)
             {
@@ -1730,11 +1773,12 @@ namespace WinPropertyGrid.Utilities
 
             for (var i = 0; i < values.GetLength(0); i++)
             {
-                var valuei = values.GetValue(i)!;
-                if (input.Length > 0 && input[0] == '-')
+                var valuei = values.GetValue(i);
+                var ul = EnumToUInt64(valuei);
+                if (input.Length > 0 && input[0] == '-' && ul.HasValue)
                 {
-                    var ul = (long)EnumToUInt64(valuei);
-                    if (ul.ToString().EqualsIgnoreCase(input))
+                    var ll = (long)ul.Value;
+                    if (ll.ToString().EqualsIgnoreCase(input))
                     {
                         value = valuei;
                         return true;
@@ -1742,8 +1786,7 @@ namespace WinPropertyGrid.Utilities
                 }
                 else
                 {
-                    var ul = EnumToUInt64(valuei);
-                    if (ul.ToString().EqualsIgnoreCase(input))
+                    if (ul.HasValue && ul.Value.ToString().EqualsIgnoreCase(input))
                     {
                         value = valuei;
                         return true;

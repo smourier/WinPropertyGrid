@@ -55,6 +55,8 @@ namespace WinPropertyGrid
         public virtual int MinSplitterWidth { get; set; } = 100;
         public virtual bool DecamelizePropertiesDisplayNames { get; set; }
         public virtual IComparer<PropertyGridProperty>? Comparer { get; set; }
+        public virtual string NullEnumName { get; set; } = "<unset>";
+        public virtual string ZeroEnumName { get; set; } = "<none>";
 
         public object? SelectedObject { get => (string)GetValue(SelectedObjectProperty); set => SetValue(SelectedObjectProperty, value); }
         protected virtual void OnSelectedObjectChanged(DependencyPropertyChangedEventArgs args)
@@ -142,6 +144,10 @@ namespace WinPropertyGrid
         }
 
         public virtual PropertyGridObject CreateGridObject(object data) => new(this, data);
+        public virtual PropertyGridProperty CreateProperty(PropertyGridObject gridObject, Type type, string name) => new(gridObject, type, name);
+        public virtual PropertyGridEnum CreateEnum(PropertyGridProperty property) => new(property);
+        public virtual PropertyGridEnumItem CreateEnumItem(PropertyGridEnum @enum, string name, object? value) => new(@enum, name, value);
+
         protected internal virtual bool CompareForEquality(object? o1, object? o2) => Equals(o1, o2);
 
         protected virtual void SynchronizeListHeights()

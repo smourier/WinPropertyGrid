@@ -18,9 +18,10 @@ namespace WinPropertyGrid
 {
     public class PropertyGridProperty : DictionaryObject
     {
-        public readonly ICommand _nullifyCommand;
-        public readonly ICommand _copyCommand;
-        public readonly ICommand _pasteCommand;
+        private readonly ICommand _nullifyCommand;
+        private readonly ICommand _copyCommand;
+        private readonly ICommand _pasteCommand;
+        private readonly Lazy<PropertyGridEnum?> _enum;
 
         public PropertyGridProperty(PropertyGridObject gridObject, Type type, string name)
         {
@@ -30,6 +31,7 @@ namespace WinPropertyGrid
             GridObject = gridObject;
             Name = name;
             Type = type;
+            _enum = new Lazy<PropertyGridEnum?>(GetEnum);
             _nullifyCommand = new BaseCommand(Nullify);
             _copyCommand = new BaseCommand(CopyToClipboard);
             _pasteCommand = new BaseCommand(PasteFromClipboard);
@@ -66,14 +68,14 @@ namespace WinPropertyGrid
         public virtual string ActualDisplayName => DisplayName.Nullify() ?? Name;
         public virtual string ActualDescription => Description.Nullify() ?? ActualDisplayName;
 
-        public virtual string FormattedValue
+        public virtual string? FormattedValue
         {
             get
             {
                 if (StringFormat != null)
-                    return string.Format(FormattedValue, Value);
+                    return string.Format(StringFormat, Value);
 
-                return string.Format("{0}", Value);
+                return Conversions.ChangeType<string>(Value);
             }
         }
 
@@ -103,6 +105,9 @@ namespace WinPropertyGrid
             }
         }
 
+        public virtual PropertyGridEnum? Enum => _enum.Value;
+
+        protected virtual PropertyGridEnum? GetEnum() => GridObject.Grid.CreateEnum(this);
         protected override void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
@@ -290,9 +295,13 @@ namespace WinPropertyGrid
                 {
                     if (value is not string str)
                     {
-                        str = FormattedValue;
+                        str = FormattedValue!;
                     }
-                    package.SetText(str);
+
+                    if (str != null)
+                    {
+                        package.SetText(str);
+                    }
                 }
             }
 

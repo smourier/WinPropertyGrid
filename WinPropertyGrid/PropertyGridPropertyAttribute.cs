@@ -6,8 +6,6 @@ namespace WinPropertyGrid
     public class PropertyGridPropertyAttribute : Attribute
     {
         public virtual bool Ignore { get; set; }
-        public virtual bool IsEnum { get; set; }
-        public virtual bool IsFlagsEnum { get; set; }
         public virtual int SortOrder { get; set; }
         public virtual Type? Type { get; set; }
         public virtual bool ForceReadWrite { get; set; }

@@ -38,6 +38,7 @@ namespace WinPropertyGrid.SampleApp
             ByteArray1 = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             WebSite = "https://www.aelyo.com";
             WebSiteUri = new Uri(WebSite);
+            //Animal = Animal.Bear;
             Status = Status.Valid;
             Addresses = new ObservableCollection<Address> { new Address { Line1 = "2018 156th Avenue NE", City = "Bellevue", State = "WA", ZipCode = 98007, Country = "USA" } };
             DaysOfWeek = DaysOfWeek.WeekDays;
@@ -45,7 +46,6 @@ namespace WinPropertyGrid.SampleApp
             PreferredColorName = "DodgerBlue";
             SampleNullableBooleanDropDownList = false;
             SampleBooleanDropDownList = true;
-            MultiEnumString = "First, Second";
             SubObject = Address.Parse("1600 Amphitheatre Pkwy, Mountain View, CA 94043, USA");
         }
 
@@ -109,7 +109,10 @@ namespace WinPropertyGrid.SampleApp
         public DateTime DateOfBirth { get => DictionaryObjectGetPropertyValue<DateTime>(); set => DictionaryObjectSetPropertyValue(value); }
 
         [Category("Enums")]
-        public Gender Gender { get => DictionaryObjectGetPropertyValue<Gender>(); set => DictionaryObjectSetPropertyValue(value); }
+        public Animal Animal { get => DictionaryObjectGetPropertyValue<Animal>(); set => DictionaryObjectSetPropertyValue(value); }
+
+        [Category("Enums")]
+        public Vehicle? Vehicle { get => DictionaryObjectGetPropertyValue<Vehicle?>(); set => DictionaryObjectSetPropertyValue(value); }
 
         [Category("Enums")]
         public Status Status
@@ -120,7 +123,6 @@ namespace WinPropertyGrid.SampleApp
                 if (DictionaryObjectSetPropertyValue(value))
                 {
                     OnPropertyChanged(nameof(StatusColor));
-                    OnPropertyChanged(nameof(StatusColorString));
                 }
             }
         }
@@ -129,16 +131,6 @@ namespace WinPropertyGrid.SampleApp
         [ReadOnly(true)]
         [Category("Enums")]
         public Status StatusColor { get => Status; set => Status = value; }
-
-        [DisplayName("Status (enum as string list)")]
-        [Category("Enums")]
-        public string StatusColorString { get => Status.ToString(); set => Status = (Status)Enum.Parse(typeof(Status), value); }
-
-        [Category("Enums")]
-        public string? MultiEnumString { get => DictionaryObjectGetPropertyValue<string>(); set => DictionaryObjectSetPropertyValue(value); }
-
-        [Category("Enums")]
-        public string? MultiEnumStringWithDisplay { get => DictionaryObjectGetPropertyValue<string>(); set => DictionaryObjectSetPropertyValue(value); }
 
         [Category("Dates and Times")]
         [Description("This is the timespan tooltip")]
@@ -393,15 +385,27 @@ namespace WinPropertyGrid.SampleApp
         WeekDays = Monday | Tuesday | Wednesday | Thursday | Friday
     }
 
-    public enum Gender
+    public enum Animal
     {
-        Male,
-        Female
+        [Browsable(false)]
+        Undetermined,
+
+        Monkey,
+        Bear,
+        Fish,
+    }
+
+    public enum Vehicle
+    {
+        Car,
+        Bike,
+        Plane,
     }
 
     public enum Status
     {
         Unknown,
+        [Description("Not Valid")]
         Invalid,
         Valid
     }
