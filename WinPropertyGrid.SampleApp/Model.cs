@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Windows.Input;
 using WinPropertyGrid.Utilities;
 
 namespace WinPropertyGrid.SampleApp
@@ -47,6 +49,14 @@ namespace WinPropertyGrid.SampleApp
             SampleNullableBooleanDropDownList = false;
             SampleBooleanDropDownList = true;
             SubObject = Address.Parse("1600 Amphitheatre Pkwy, Mountain View, CA 94043, USA");
+
+            PreviewCommand = new BaseCommand(obj =>
+            {
+                if (obj is string uri)
+                {
+                    Process.Start(new ProcessStartInfo(uri) { UseShellExecute = true });
+                }
+            });
         }
 
         [DisplayName("Guid (see menu on right-click)")]
@@ -153,6 +163,7 @@ namespace WinPropertyGrid.SampleApp
         [DisplayName("Byte Array (press button for hex dump)")]
         public byte[]? ByteArray2 { get => ByteArray1; set => ByteArray1 = value; }
 
+        [PropertyGridProperty(EditorDataTemplateResourceKey = "CustomEditor", SortOrder = -10)]
         [DisplayName("Web Site (custom sort order)")]
         public string? WebSite { get => DictionaryObjectGetPropertyValue<string>(); set => DictionaryObjectSetPropertyValue(value); }
 
@@ -255,6 +266,8 @@ namespace WinPropertyGrid.SampleApp
                 }
             }
         }
+
+        public ICommand PreviewCommand { get; }
     }
 
     [TypeConverter(typeof(AddressConverter))]

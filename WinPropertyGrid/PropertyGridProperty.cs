@@ -39,6 +39,8 @@ namespace WinPropertyGrid
         }
 
         public PropertyGridObject GridObject { get; }
+        public PropertyGrid Grid => GridObject.Grid;
+        public object? SelectedObject => Grid.SelectedObject;
         public Type Type { get; }
         public string Name { get; }
         public virtual PropertyDescriptor? Descriptor { get; set; }

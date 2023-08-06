@@ -59,7 +59,7 @@ namespace WinPropertyGrid
         public virtual string NullEnumName { get; set; } = "<unset>";
         public virtual string ZeroEnumName { get; set; } = "<none>";
 
-        public object? SelectedObject { get => (string)GetValue(SelectedObjectProperty); set => SetValue(SelectedObjectProperty, value); }
+        public object? SelectedObject { get => GetValue(SelectedObjectProperty); set => SetValue(SelectedObjectProperty, value); }
         protected virtual void OnSelectedObjectChanged(DependencyPropertyChangedEventArgs args)
         {
             if (args.NewValue == null)

@@ -24,6 +24,24 @@
                     Orientation="Horizontal"
                     Value="{Binding Value, Mode=TwoWay}" />
             </DataTemplate>
+
+            <DataTemplate x:Key="CustomEditor">
+                <RelativePanel HorizontalAlignment="Stretch" ToolTipService.ToolTip="{Binding FormattedValue}">
+                    <TextBox
+                        IsReadOnly="{Binding IsReadOnly}"
+                        RelativePanel.AlignLeftWithPanel="True"
+                        RelativePanel.AlignRightWith="preview"
+                        Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button
+                        x:Name="preview"
+                        Width="Auto"
+                        HorizontalContentAlignment="Center"
+                        Command="{Binding SelectedObject.PreviewCommand}"
+                        CommandParameter="{Binding Value}"
+                        Content="Preview"
+                        RelativePanel.AlignRightWithPanel="True" />
+                </RelativePanel>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

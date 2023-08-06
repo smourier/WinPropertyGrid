@@ -9,12 +9,13 @@ namespace WinPropertyGrid.Utilities
 
         public BaseCommand(Action<object?> executor)
         {
+            ArgumentNullException.ThrowIfNull(executor);
             Executor = executor;
         }
 
         public Action<object?> Executor { get; }
 
-        public virtual void Execute(object? parameter) => Executor?.Invoke(parameter);
+        public virtual void Execute(object? parameter) => Executor.Invoke(parameter);
 
         public virtual bool CanExecute(object? parameter) => true;
         protected virtual void OnCanExecuteChanged(object? sender, EventArgs e) => CanExecuteChanged?.Invoke(sender, e);
