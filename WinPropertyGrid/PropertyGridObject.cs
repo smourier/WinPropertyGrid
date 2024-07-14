@@ -147,23 +147,6 @@ namespace WinPropertyGrid
                 }
             }
 
-            if (property == null)
-            {
-                options = descriptor.PropertyType.CustomAttributes.OfType<PropertyGridPropertyAttribute>().FirstOrDefault();
-                if (options != null)
-                {
-                    if (!forceReadWrite)
-                    {
-                        forceReadWrite = options.ForceReadWrite;
-                    }
-
-                    if (options.Type != null)
-                    {
-                        property = Activator.CreateInstance(options.Type, this) as PropertyGridProperty;
-                    }
-                }
-            }
-
             property ??= Grid.CreateProperty(this, descriptor.PropertyType, descriptor.Name);
             if (property == null)
                 return null;
