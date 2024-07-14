@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinPropertyGrid", "WinPropertyGrid\WinPropertyGrid.csproj", "{10086125-1671-497F-B28E-4647383E936A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinPropertyGrid.SampleApp", "WinPropertyGrid.SampleApp\WinPropertyGrid.SampleApp.csproj", "{1FF726ED-DFE7-4D48-B061-7B78379F9603}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinPropertyGrid", "WinPropertyGrid\WinPropertyGrid.csproj", "{10086125-1671-497F-B28E-4647383E936A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
