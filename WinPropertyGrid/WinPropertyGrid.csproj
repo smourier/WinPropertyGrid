@@ -7,13 +7,14 @@
 		<UseWinUI>true</UseWinUI>
 		<Nullable>enable</Nullable>
 		<UseRidGraph>true</UseRidGraph>
+		<WindowsSdkPackageVersion>10.0.22621.38</WindowsSdkPackageVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Remove="PropertyGrid.xaml" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240829007" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
 	</ItemGroup>
 
