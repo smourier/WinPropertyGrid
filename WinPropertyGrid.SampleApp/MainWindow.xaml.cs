@@ -9,6 +9,7 @@ namespace WinPropertyGrid.SampleApp
         public MainWindow()
         {
             InitializeComponent();
+            AppWindow.TitleBar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
             var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest);
             var width = 1000;
             var height = 600;
