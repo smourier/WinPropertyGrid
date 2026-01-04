@@ -1,2 +1,2 @@
 # WinPropertyGrid
-A WinUI3 property grid component
+A WinUI3 .NET 10 property grid component

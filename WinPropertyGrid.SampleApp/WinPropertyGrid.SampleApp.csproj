@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+		<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
 		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
 		<RootNamespace>WinPropertyGrid.SampleApp</RootNamespace>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
@@ -15,7 +15,11 @@
 		<!-- <WindowsPackageType>None</WindowsPackageType> -->
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 		<WindowsSdkPackageVersion>10.0.22621.38</WindowsSdkPackageVersion>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Include="..\WinPropertyGrid\Properties\AssemblyVersionInfo.cs" Link="Properties\AssemblyVersionInfo.cs" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Content Include="Assets\SplashScreen.scale-200.png" />
@@ -28,8 +32,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
-		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
+		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7175" />
 		<Manifest Include="$(ApplicationManifest)" />
 	</ItemGroup>
 

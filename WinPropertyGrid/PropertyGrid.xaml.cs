@@ -157,10 +157,13 @@ namespace WinPropertyGrid
             foreach (var value in ValuesList.EnumerateChildren(true).OfType<ListViewItemPresenter>())
             {
                 names.MoveNext();
-                // poor man's check... could be improved to match names & values but it will take more perf
-                if (value.DataContext == names.Current.DataContext)
+                if (names.Current != null)
                 {
-                    names.Current.Height = value.ActualHeight;
+                    // poor man's check... could be improved to match names & values but it will take more perf
+                    if (value.DataContext == names.Current.DataContext)
+                    {
+                        names.Current.Height = value.ActualHeight;
+                    }
                 }
             }
         }
